@@ -11,6 +11,8 @@ interface Dealer {
     contractEndDate: string | null; // Contract end date
 }
 
+import { API_URL } from '../config';
+
 export function Dashboard() {
     const [dealers, setDealers] = useState<Dealer[]>([]);
     const [loading, setLoading] = useState(true);
@@ -23,9 +25,11 @@ export function Dashboard() {
         return () => clearInterval(interval);
     }, []);
 
+
+
     const fetchDealers = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/dealers');
+            const response = await fetch(`${API_URL}/api/dealers`);
 
             if (!response.ok) {
                 if (response.status === 429) {
@@ -113,8 +117,8 @@ export function Dashboard() {
                         <button
                             onClick={() => setViewMode('normal')}
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${viewMode === 'normal'
-                                    ? 'bg-primary-50 text-primary-700'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-primary-50 text-primary-700'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             Normal
@@ -122,8 +126,8 @@ export function Dashboard() {
                         <button
                             onClick={() => setViewMode('compact')}
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${viewMode === 'compact'
-                                    ? 'bg-primary-50 text-primary-700'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-primary-50 text-primary-700'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             Kompakt (Tümü)
@@ -144,7 +148,7 @@ export function Dashboard() {
                                 to={`/dealers/${dealer.id}`}
                                 key={dealer.id}
                                 className={`bg-white rounded-xl shadow-sm border p-5 hover:shadow-md transition-shadow flex flex-col justify-between h-40 cursor-pointer relative overflow-hidden ${expiration?.color === 'red' ? 'border-red-200 bg-red-50/30' :
-                                        expiration?.color === 'yellow' ? 'border-yellow-200 bg-yellow-50/30' : 'border-gray-200'
+                                    expiration?.color === 'yellow' ? 'border-yellow-200 bg-yellow-50/30' : 'border-gray-200'
                                     }`}
                             >
                                 {expiration && (
@@ -203,7 +207,7 @@ export function Dashboard() {
                                 to={`/dealers/${dealer.id}`}
                                 key={dealer.id}
                                 className={`bg-white rounded-lg border p-2 hover:border-primary-500 transition-colors cursor-pointer group relative ${expiration?.color === 'red' ? 'border-red-300 bg-red-50' :
-                                        expiration?.color === 'yellow' ? 'border-yellow-300 bg-yellow-50' : 'border-gray-200'
+                                    expiration?.color === 'yellow' ? 'border-yellow-300 bg-yellow-50' : 'border-gray-200'
                                     }`}
                                 title={`${dealer.title} - %${dealer.tankLevel}${expiration ? `\n⚠️ ${expiration.message}` : ''}`}
                             >

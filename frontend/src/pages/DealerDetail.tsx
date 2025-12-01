@@ -6,6 +6,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+import { API_URL } from '../config';
+
 // Fix for default marker icon
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -50,7 +52,7 @@ export function DealerDetail() {
     useEffect(() => {
         const fetchDealer = async () => {
             try {
-                const response = await fetch(`http://localhost:3000/api/dealers/${id}`);
+                const response = await fetch(`${API_URL}/api/dealers/${id}`);
                 if (response.ok) {
                     const data = await response.json();
                     setDealer(data);

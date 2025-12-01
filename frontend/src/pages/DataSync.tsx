@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { RefreshCw, CheckCircle, ExternalLink, ShieldCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { API_URL } from '../config';
 
 export function DataSync() {
     const [isSyncing, setIsSyncing] = useState(false);
@@ -14,7 +15,7 @@ export function DataSync() {
             // Step 1: Browser opens (Backend handles this)
             setStep('captcha-waiting');
 
-            const response = await fetch('http://localhost:3000/api/sync/epdk', {
+            const response = await fetch(`${API_URL}/api/sync/epdk`, {
                 method: 'POST',
             });
 

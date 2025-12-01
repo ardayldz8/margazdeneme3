@@ -4,6 +4,8 @@ import 'leaflet/dist/leaflet.css';
 import { Building2, RefreshCw } from 'lucide-react';
 import L from 'leaflet';
 
+import { API_URL } from '../config';
+
 // Fix for default marker icon missing in React Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -41,7 +43,7 @@ export function Map() {
 
     const fetchDealers = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/dealers');
+            const response = await fetch(`${API_URL}/api/dealers`);
             const data: Dealer[] = await response.json();
 
             // Apply deterministic jitter to separate overlapping markers
