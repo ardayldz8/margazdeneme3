@@ -1,6 +1,7 @@
 const { ApiGatewayV2Client, GetApisCommand } = require("@aws-sdk/client-apigatewayv2");
 const dotenv = require('dotenv');
-dotenv.config();
+const path = require('path');
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const client = new ApiGatewayV2Client({ region: process.env.AWS_REGION || "eu-north-1" });
 

@@ -48,7 +48,7 @@ export function Map() {
 
             // Apply deterministic jitter to separate overlapping markers
             // We use the index or ID to create a consistent offset
-            const processedData = data.map((dealer, index) => {
+            const processedData = data.map((dealer) => {
                 if (!dealer.latitude || !dealer.longitude) return dealer;
 
                 // Simple deterministic random-like offset based on ID char codes
