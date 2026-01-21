@@ -20,6 +20,7 @@ model User {
 model Dealer {
   id          String   @id @default(uuid())
   licenseNo   String   @unique
+  deviceId    String?  @unique  // Arduino cihaz ID: "1-aktup", "2-baykal"
   title       String
   city        String?
   district    String?
@@ -43,9 +44,6 @@ model Dealer {
   // Telemetry
   tankLevel   Int      @default(0)
   lastData    DateTime?
-  
-  // Pricing
-  currentPrice Float?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

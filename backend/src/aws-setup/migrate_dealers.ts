@@ -21,8 +21,19 @@ async function migrate() {
         console.log(`📦 Found ${dealers.length} dealers in local database.`);
 
         if (dealers.length === 0) {
-            console.log("⚠️ No dealers to migrate.");
-            return;
+            console.log("⚠️ No dealers found. Creating a DEMO dealer...");
+            const demoDealer = await prisma.dealer.create({
+                data: {
+                    licenseNo: 'DEMO_AWS_001',
+                    title: 'AWS Demo İstasyonu',
+                    city: 'Istanbul',
+                    district: 'Merkez',
+                    tankLevel: 25,
+                    lastData: new Date()
+                }
+            });
+            dealers.push(demoDealer);
+            console.log("✅ Created Demo Dealer.");
         }
 
         // 2. Upload to DynamoDB
@@ -53,7 +64,7 @@ async function migrate() {
                 }));
                 process.stdout.write("."); // Progress indicator
                 successCount++;
-            } catch (err) {
+            } catch (err: any) {
                 console.error(`\n❌ Failed to upload dealer ${dealer.title}:`, err.message);
                 failCount++;
             }
@@ -65,8 +76,11 @@ async function migrate() {
         console.log(`Failed:   ${failCount}`);
         console.log("---------------------------------------------------");
 
-    } catch (error) {
-        console.error("❌ Migration failed:", error);
+    } catch (err: any) {
+        console.error("❌ Error migrating dealers:", err);
+        if (err.name === 'ResourceNotFoundException') {
+            console.error("Please ensure the 'MargazDealers' DynamoDB table exists and is correctly configured.");
+        }
     } finally {
         await prisma.$disconnect();
     }

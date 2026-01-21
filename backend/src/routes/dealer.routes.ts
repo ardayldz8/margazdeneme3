@@ -35,26 +35,6 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Update dealer
-router.put('/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { currentPrice } = req.body;
-
-        const updatedDealer = await prisma.dealer.update({
-            where: { id },
-            data: {
-                currentPrice: currentPrice ? parseFloat(currentPrice) : undefined
-            }
-        });
-
-        res.json(updatedDealer);
-    } catch (error) {
-        console.error('Update error:', error);
-        res.status(500).json({ error: 'Failed to update dealer' });
-    }
-});
-
 import { GeocodingService } from '../services/geocoding.service';
 
 // ... existing code ...

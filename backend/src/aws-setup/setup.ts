@@ -1,7 +1,7 @@
 import { DynamoDBClient, CreateTableCommand, ResourceInUseException } from "@aws-sdk/client-dynamodb";
 import { IAMClient, CreateRoleCommand, AttachRolePolicyCommand, GetRoleCommand } from "@aws-sdk/client-iam";
 import { LambdaClient, CreateFunctionCommand, UpdateFunctionCodeCommand, GetFunctionCommand, ResourceConflictException } from "@aws-sdk/client-lambda";
-import { ApiGatewayV2Client, CreateApiCommand, CreateIntegrationCommand, CreateRouteCommand, CreateStageCommand, GetApiCommand } from "@aws-sdk/client-api-gateway-v2";
+import { ApiGatewayV2Client, CreateApiCommand, CreateIntegrationCommand, CreateRouteCommand, CreateStageCommand, GetApiCommand } from "@aws-sdk/client-apigatewayv2";
 import * as fs from 'fs';
 import * as path from 'path';
 import archiver from 'archiver';
@@ -94,7 +94,7 @@ async function setup() {
         console.log("✅ IAM Role created. Waiting for propagation...");
         await new Promise(r => setTimeout(r, 10000)); // Wait for role to propagate
     } catch (err: any) {
-        if (err.name === 'EntityAlreadyExists') {
+        if (err.name === 'EntityAlreadyExists' || err.name === 'EntityAlreadyExistsException') {
             console.log("⚠️ IAM Role already exists.");
             const role = await iamClient.send(new GetRoleCommand({ RoleName: ROLE_NAME }));
             roleArn = role.Role!.Arn!;
@@ -157,13 +157,14 @@ async function setup() {
 
         // Add permission for API Gateway to invoke Lambda
         try {
+            const accountId = roleArn.split(':')[4];
             const { AddPermissionCommand } = require("@aws-sdk/client-lambda");
             await lambdaClient.send(new AddPermissionCommand({
                 FunctionName: FUNCTION_NAME,
-                StatementId: "apigateway-invoke",
+                StatementId: `apigateway-invoke-${apiId}`,
                 Action: "lambda:InvokeFunction",
                 Principal: "apigateway.amazonaws.com",
-                SourceArn: `arn:aws:execute-api:${REGION}:${process.env.AWS_ACCESS_KEY_ID?.startsWith('AKIA') ? '*' : '*'}:${apiId}/*/*`
+                SourceArn: `arn:aws:execute-api:${REGION}:${accountId}:${apiId}/*/*`
             }));
         } catch (e: any) {
             if (e.name !== 'ResourceConflictException') console.error("Warning adding permission:", e);

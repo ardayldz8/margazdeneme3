@@ -10,6 +10,11 @@ export class SerialService {
     private isConnected: boolean = false;
 
     constructor() {
+        // Disable SerialService in Cloud (Render) environment
+        if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+            console.log('☁️ Running in Cloud Environment. SerialService disabled.');
+            return;
+        }
         this.initialize();
     }
 
