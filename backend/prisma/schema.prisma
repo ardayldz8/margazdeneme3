@@ -44,6 +44,9 @@ model Dealer {
   tankLevel   Int      @default(0)
   lastData    DateTime?
   
+  // Pricing
+  currentPrice Float?
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

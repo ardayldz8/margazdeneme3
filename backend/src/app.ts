@@ -9,7 +9,7 @@ const app = express();
 // Security Middleware
 app.use(helmet());
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://margaz.netlify.app'],
     credentials: true
 }));
 app.use(express.json());
@@ -22,10 +22,12 @@ const limiter = rateLimit({
 app.use(limiter);
 
 import dealerRoutes from './routes/dealer.routes';
+import tankRoutes from './routes/tank.routes';
 
 // Routes
 app.use('/api/sync', syncRoutes);
 app.use('/api/dealers', dealerRoutes);
+app.use('/api/tank', tankRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
