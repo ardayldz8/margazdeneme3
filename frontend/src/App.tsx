@@ -7,6 +7,7 @@ import { Map } from './pages/Map';
 import { DealerDetail } from './pages/DealerDetail';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
+import { Admin } from './pages/Admin';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="settings" element={<Settings />} />
           <Route path="map" element={<Map />} />
           <Route path="sync" element={<DataSync />} />
+          <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>
     </Router>

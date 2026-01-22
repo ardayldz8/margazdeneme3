@@ -1,4 +1,4 @@
-import { LayoutDashboard, Map, Settings, Truck, FileText, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, Map, Settings, Truck, FileText, RefreshCw, Shield } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 
@@ -9,6 +9,7 @@ const navigation = [
     { name: 'Raporlar', href: '/reports', icon: FileText },
     { name: 'Entegrasyon', href: '/sync', icon: RefreshCw },
     { name: 'Ayarlar', href: '/settings', icon: Settings },
+    { name: 'Admin', href: '/admin', icon: Shield },
 ];
 
 export function Sidebar() {
