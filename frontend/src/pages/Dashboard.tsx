@@ -9,6 +9,7 @@ interface Dealer {
     lastData: string | null;
     endDate: string | null; // License end date
     contractEndDate: string | null; // Contract end date
+    deviceId: string | null; // Arduino device ID
 }
 
 import { API_URL } from '../config';
@@ -169,16 +170,24 @@ export function Dashboard() {
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-end">
                                         <span className="text-xs text-gray-500">Doluluk</span>
-                                        <span className={`text-xl font-bold ${getTextColor(dealer.tankLevel)}`}>
-                                            %{dealer.tankLevel}
-                                        </span>
+                                        {dealer.deviceId ? (
+                                            <span className={`text-xl font-bold ${getTextColor(dealer.tankLevel)}`}>
+                                                %{dealer.tankLevel}
+                                            </span>
+                                        ) : (
+                                            <span className="text-xl font-bold text-gray-400">Veri Yok</span>
+                                        )}
                                     </div>
 
                                     <div className="relative h-3 w-full bg-gray-100 rounded-full overflow-hidden">
-                                        <div
-                                            className={`absolute top-0 left-0 h-full ${getProgressColor(dealer.tankLevel)} transition-all duration-500`}
-                                            style={{ width: `${dealer.tankLevel}%` }}
-                                        />
+                                        {dealer.deviceId ? (
+                                            <div
+                                                className={`absolute top-0 left-0 h-full ${getProgressColor(dealer.tankLevel)} transition-all duration-500`}
+                                                style={{ width: `${dealer.tankLevel}%` }}
+                                            />
+                                        ) : (
+                                            <div className="absolute top-0 left-0 h-full w-full bg-gray-200" />
+                                        )}
                                     </div>
 
                                     <div className="flex justify-between items-center pt-1">
@@ -221,9 +230,13 @@ export function Dashboard() {
                                     <span className="text-[10px] font-medium text-gray-600 truncate max-w-[70%]">
                                         {dealer.title.split(' ')[0]}...
                                     </span>
-                                    <span className={`text-xs font-bold ${getTextColor(dealer.tankLevel)}`}>
-                                        %{dealer.tankLevel}
-                                    </span>
+                                    {dealer.deviceId ? (
+                                        <span className={`text-xs font-bold ${getTextColor(dealer.tankLevel)}`}>
+                                            %{dealer.tankLevel}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs font-bold text-gray-400">-</span>
+                                    )}
                                 </div>
                                 <div className="relative h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                                     <div
