@@ -1,4 +1,4 @@
-import { LayoutDashboard, Map, Settings, Truck, FileText, RefreshCw, Shield } from 'lucide-react';
+import { LayoutDashboard, Map, Settings, Truck, FileText, RefreshCw, Shield, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 
@@ -12,21 +12,35 @@ const navigation = [
     { name: 'Admin', href: '/admin', icon: Shield },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+    onClose?: () => void;
+}
+
+export function Sidebar({ onClose }: SidebarProps) {
     const location = useLocation();
 
     return (
         <div className="flex h-full w-64 flex-col bg-white border-r border-gray-200 shadow-sm">
-            <div className="flex h-16 items-center px-6 border-b border-gray-100">
+            <div className="flex h-14 lg:h-16 items-center justify-between px-4 lg:px-6 border-b border-gray-100">
                 <h1 className="text-xl font-bold text-primary-600">Margaz BTS</h1>
+                {/* Mobile close button */}
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 lg:hidden"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                )}
             </div>
-            <nav className="flex-1 space-y-1 px-3 py-4">
+            <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
                 {navigation.map((item) => {
                     const isActive = location.pathname === item.href;
                     return (
                         <Link
                             key={item.name}
                             to={item.href}
+                            onClick={onClose}
                             className={cn(
                                 'group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
                                 isActive

@@ -195,9 +195,9 @@ export function Admin() {
             {/* DEVICES TAB */}
             {activeTab === 'devices' && (
                 <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold">Arduino Cihazları</h2>
-                        <button onClick={() => setShowAddDevice(true)} className="bg-primary-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <h2 className="text-lg sm:text-xl font-bold">Arduino Cihazları</h2>
+                        <button onClick={() => setShowAddDevice(true)} className="bg-primary-600 text-white px-3 py-2 text-sm sm:px-4 rounded-lg flex items-center gap-2">
                             <Plus className="h-5 w-5" /> Yeni Cihaz Ekle
                         </button>
                     </div>
@@ -227,7 +227,7 @@ export function Admin() {
                         </div>
                     )}
 
-                    <div className="bg-white rounded-xl border overflow-hidden">
+                    <div className="bg-white rounded-xl border overflow-hidden overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
@@ -270,17 +270,17 @@ export function Admin() {
             {/* DEALERS TAB */}
             {activeTab === 'dealers' && (
                 <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold">Bayi Yönetimi</h2>
-                        <button onClick={() => setShowAddForm(true)} className="bg-primary-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <h2 className="text-lg sm:text-xl font-bold">Bayi Yönetimi</h2>
+                        <button onClick={() => setShowAddForm(true)} className="bg-primary-600 text-white px-3 py-2 text-sm sm:px-4 rounded-lg flex items-center gap-2">
                             <Plus className="h-5 w-5" /> Yeni Bayi Ekle
                         </button>
                     </div>
 
                     {showAddForm && (
-                        <div className="bg-white rounded-xl border p-6">
+                        <div className="bg-white rounded-xl border p-4 sm:p-6">
                             <h3 className="text-lg font-semibold mb-4">Yeni Bayi Ekle</h3>
-                            <form onSubmit={handleCreateDealer} className="grid grid-cols-2 gap-4">
+                            <form onSubmit={handleCreateDealer} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <input placeholder="Bayi Adı *" value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                     className="px-3 py-2 border rounded-lg" required />
@@ -293,7 +293,7 @@ export function Admin() {
                                 <input placeholder="Dağıtıcı" value={formData.distributor}
                                     onChange={(e) => setFormData({ ...formData, distributor: e.target.value })}
                                     className="px-3 py-2 border rounded-lg" />
-                                <div className="col-span-2">
+                                <div className="sm:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Arduino Cihazı</label>
                                     <select value={formData.deviceId} onChange={(e) => setFormData({ ...formData, deviceId: e.target.value })}
                                         className="w-full px-3 py-2 border rounded-lg bg-white">
@@ -306,7 +306,7 @@ export function Admin() {
                                         <p className="text-xs text-orange-600 mt-1">⚠️ Önce Cihazlar sekmesinden cihaz ekleyin</p>
                                     )}
                                 </div>
-                                <div className="col-span-2 flex gap-2">
+                                <div className="sm:col-span-2 flex gap-2">
                                     <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg">
                                         <Save className="h-4 w-4 inline mr-2" /> Kaydet
                                     </button>
@@ -318,7 +318,7 @@ export function Admin() {
                         </div>
                     )}
 
-                    <div className="bg-white rounded-xl border overflow-hidden">
+                    <div className="bg-white rounded-xl border overflow-hidden overflow-x-auto">
                         {loading ? (
                             <div className="p-8 text-center text-gray-500">Yükleniyor...</div>
                         ) : (
