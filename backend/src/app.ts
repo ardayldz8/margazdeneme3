@@ -23,11 +23,13 @@ app.use(limiter);
 
 import dealerRoutes from './routes/dealer.routes';
 import telemetryRoutes from './routes/telemetry.routes';
+import deviceRoutes from './routes/device.routes';
 
 // Routes
 app.use('/api/sync', syncRoutes);
 app.use('/api/dealers', dealerRoutes);
 app.use('/api/telemetry', telemetryRoutes);
+app.use('/api/devices', deviceRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {

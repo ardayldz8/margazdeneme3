@@ -48,3 +48,15 @@ model Dealer {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// Arduino Cihaz Yönetimi
+model Device {
+  id          String   @id @default(uuid())
+  deviceId    String   @unique  // Arduino'daki device_id: "1-aktup"
+  name        String             // Görünen ad: "Aktup Arduino #1"
+  description String?            // Açıklama
+  status      String   @default("active")  // active, inactive, maintenance
+  lastSeen    DateTime?          // Son veri gönderimi
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
