@@ -32,7 +32,7 @@ export function Admin() {
     const [password, setPassword] = useState('');
     const [dealers, setDealers] = useState<Dealer[]>([]);
     const [devices, setDevices] = useState<Device[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showAddForm, setShowAddForm] = useState(false);
     const [showAddDevice, setShowAddDevice] = useState(false);
