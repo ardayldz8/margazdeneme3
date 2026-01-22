@@ -81,6 +81,17 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const data = req.body;
 
+        // Eğer deviceId atanıyorsa, önce başka bayiden kaldır (Unique constraint)
+        if (data.deviceId) {
+            await prisma.dealer.updateMany({
+                where: {
+                    deviceId: data.deviceId,
+                    NOT: { id: id }
+                },
+                data: { deviceId: null }
+            });
+        }
+
         const dealer = await prisma.dealer.update({
             where: { id },
             data: {
@@ -90,7 +101,7 @@ router.put('/:id', async (req, res) => {
                 address: data.address,
                 status: data.status,
                 distributor: data.distributor,
-                deviceId: data.deviceId,
+                deviceId: data.deviceId || null,
                 tankLevel: data.tankLevel,
             }
         });
