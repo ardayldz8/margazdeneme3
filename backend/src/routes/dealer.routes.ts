@@ -35,6 +35,34 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// Get dealer telemetry history (Son 24 saat)
+router.get('/:id/history', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const hours = parseInt(req.query.hours as string) || 24;
+
+        // Son X saatlik veri
+        const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+
+        const history = await prisma.telemetryHistory.findMany({
+            where: {
+                dealerId: id,
+                timestamp: { gte: since }
+            },
+            orderBy: { timestamp: 'asc' },
+            select: {
+                tankLevel: true,
+                timestamp: true
+            }
+        });
+
+        res.json(history);
+    } catch (error) {
+        console.error('Error fetching history:', error);
+        res.status(500).json({ error: 'Failed to fetch history' });
+    }
+});
+
 import { GeocodingService } from '../services/geocoding.service';
 
 // ... existing code ...

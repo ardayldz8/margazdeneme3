@@ -62,7 +62,17 @@ router.post('/', async (req, res) => {
             }
         });
 
-        console.log(`✅ Updated Dealer: ${updatedDealer.title} -> ${updatedDealer.tankLevel}%`);
+        // === SAVE TO HISTORY ===
+        // Gerçek zaman serisi verisi olarak kaydet
+        await prisma.telemetryHistory.create({
+            data: {
+                deviceId: device_id,
+                dealerId: dealer.id,
+                tankLevel: Number(tank_level)
+            }
+        });
+
+        console.log(`✅ Updated Dealer: ${updatedDealer.title} -> ${updatedDealer.tankLevel}% (History saved)`);
 
         // --- FORWARD TO AWS (Cloud Bridge) ---
         try {

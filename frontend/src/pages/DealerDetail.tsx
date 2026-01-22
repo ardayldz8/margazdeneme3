@@ -48,6 +48,7 @@ export function DealerDetail() {
     const [dealer, setDealer] = useState<Dealer | null>(null);
     const [loading, setLoading] = useState(true);
     const [historyData, setHistoryData] = useState<any[]>([]);
+    const [loadingHistory, setLoadingHistory] = useState(false);
 
     useEffect(() => {
         const fetchDealer = async () => {
@@ -56,7 +57,6 @@ export function DealerDetail() {
                 if (response.ok) {
                     const data = await response.json();
                     setDealer(data);
-                    generateMockHistory(data.tankLevel);
                 } else {
                     console.error('Dealer not found');
                 }
@@ -67,37 +67,35 @@ export function DealerDetail() {
             }
         };
 
-        if (id) fetchDealer();
+        if (id) {
+            fetchDealer();
+            fetchHistory();
+        }
     }, [id]);
 
-    const generateMockHistory = (currentLevel: number) => {
-        const data = [];
-        const now = new Date();
-        let level = currentLevel;
-
-        // Generate 24 hours of data points
-        for (let i = 24; i >= 0; i--) {
-            const time = new Date(now.getTime() - i * 60 * 60 * 1000);
-
-            // Add some random fluctuation but keep it somewhat consistent
-            // Simulate usage (level generally going down or staying same, refill going up)
-            if (i > 0) {
-                // 10% chance of refill, otherwise small usage or steady
-                if (Math.random() > 0.95) {
-                    level = Math.min(100, level + Math.random() * 20); // Refill
-                } else {
-                    level = Math.max(0, level - Math.random() * 2); // Usage
-                }
-            } else {
-                level = currentLevel; // Ensure last point matches current
+    const fetchHistory = async () => {
+        setLoadingHistory(true);
+        try {
+            const response = await fetch(`${API_URL}/api/dealers/${id}/history?hours=24`);
+            if (response.ok) {
+                const data = await response.json();
+                // Format data for chart
+                const formatted = data.map((item: any) => ({
+                    time: new Date(item.timestamp).toLocaleString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    level: item.tankLevel
+                }));
+                setHistoryData(formatted);
             }
-
-            data.push({
-                time: time.getHours() + ':00',
-                level: Math.round(level)
-            });
+        } catch (error) {
+            console.error('Error fetching history:', error);
+        } finally {
+            setLoadingHistory(false);
         }
-        setHistoryData(data);
     };
 
     const getProgressColor = (level: number) => {
@@ -223,46 +221,58 @@ export function DealerDetail() {
                                 <TrendingUp className="h-5 w-5 text-primary-600" />
                                 Tank Seviyesi Geçmişi (Son 24 Saat)
                             </h2>
-                            <span className="text-xs font-medium px-2 py-1 bg-blue-50 text-blue-700 rounded">Canlı İzleme</span>
+                            <button
+                                onClick={fetchHistory}
+                                disabled={loadingHistory}
+                                className="text-sm font-medium px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                {loadingHistory ? 'Yükleniyor...' : 'Verileri Getir'}
+                            </button>
                         </div>
-                        <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={historyData}>
-                                    <defs>
-                                        <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8} />
-                                            <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                    <XAxis
-                                        dataKey="time"
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fill: '#9ca3af', fontSize: 12 }}
-                                        dy={10}
-                                    />
-                                    <YAxis
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fill: '#9ca3af', fontSize: 12 }}
-                                        domain={[0, 100]}
-                                        unit="%"
-                                    />
-                                    <Tooltip
-                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="level"
-                                        stroke="#0ea5e9"
-                                        strokeWidth={2}
-                                        fillOpacity={1}
-                                        fill="url(#colorLevel)"
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
+                        {historyData.length === 0 ? (
+                            <div className="h-[300px] flex items-center justify-center text-gray-400">
+                                Henüz geçmiş verisi yok. Arduino veri göndermeye başladığında grafik oluşacak.
+                            </div>
+                        ) : (
+                            <div className="h-[300px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={historyData}>
+                                        <defs>
+                                            <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                        <XAxis
+                                            dataKey="time"
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                            dy={10}
+                                        />
+                                        <YAxis
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                            domain={[0, 100]}
+                                            unit="%"
+                                        />
+                                        <Tooltip
+                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                        />
+                                        <Area
+                                            type="monotone"
+                                            dataKey="level"
+                                            stroke="#0ea5e9"
+                                            strokeWidth={2}
+                                            fillOpacity={1}
+                                            fill="url(#colorLevel)"
+                                        />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
                     </div>
 
                     {/* Map Card */}
