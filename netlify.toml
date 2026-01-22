@@ -3,6 +3,13 @@
   publish = "dist"
   command = "npm run build"
 
+# API proxy - Lightsail'e yönlendir (HTTPS -> HTTP sorununu çözer)
+[[redirects]]
+  from = "/api/*"
+  to = "http://63.181.47.189/api/:splat"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
