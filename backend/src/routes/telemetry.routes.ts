@@ -12,15 +12,44 @@ router.post('/', async (req, res) => {
 
         console.log(`📡 Telemetry Received: Level=${tank_level}% (Device: ${device_id})`);
 
+        // === AUTO-REGISTER DEVICE ===
+        // Cihaz tablosunda var mı kontrol et, yoksa otomatik ekle
+        let device = await prisma.device.findUnique({
+            where: { deviceId: device_id }
+        });
+
+        if (!device) {
+            // Yeni cihaz - otomatik kaydet
+            device = await prisma.device.create({
+                data: {
+                    deviceId: device_id,
+                    name: `Arduino ${device_id}`,
+                    description: 'Otomatik kaydedildi',
+                    status: 'active'
+                }
+            });
+            console.log(`🆕 Yeni cihaz otomatik kaydedildi: ${device_id}`);
+        }
+
+        // Cihazın lastSeen'ini güncelle
+        await prisma.device.update({
+            where: { id: device.id },
+            data: { lastSeen: new Date() }
+        });
+
         // Device ID'ye göre bayi bul
         let dealer = await prisma.dealer.findUnique({
             where: { deviceId: device_id }
         });
 
-        // Bulunamazsa uyarı ver
+        // Bulunamazsa uyarı ver ama başarılı dön (cihaz kaydedildi)
         if (!dealer) {
-            console.warn(`⚠️ Device ${device_id} eşleşen bayi bulunamadı!`);
-            res.status(404).json({ error: `Device ${device_id} not found. Please register this device to a dealer.` });
+            console.warn(`⚠️ Device ${device_id} henüz bir bayiye atanmamış`);
+            res.json({
+                message: 'Device registered but not assigned to a dealer',
+                device: device_id,
+                needsAssignment: true
+            });
             return;
         }
 
