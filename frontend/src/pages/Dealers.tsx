@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Building2, MapPin } from 'lucide-react';
+import { API_URL } from '../config';
 
 interface Dealer {
     id: string;
@@ -36,7 +37,7 @@ export function Dealers() {
 
     const fetchDealers = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/dealers');
+            const response = await fetch(`${API_URL}/api/dealers`);
             const data = await response.json();
             setDealers(data);
         } catch (error) {

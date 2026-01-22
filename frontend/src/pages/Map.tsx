@@ -76,7 +76,7 @@ export function Map() {
     const triggerGeocoding = async () => {
         setGeocoding(true);
         try {
-            await fetch('http://localhost:3000/api/dealers/geocode', { method: 'POST' });
+            await fetch(`${API_URL}/api/dealers/geocode`, { method: 'POST' });
             alert('Konum güncelleme işlemi arka planda başlatıldı. Sayfayı birkaç dakika sonra yenileyin.');
         } catch (error) {
             console.error('Error triggering geocode:', error);

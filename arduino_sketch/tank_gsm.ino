@@ -28,9 +28,13 @@ void setup() {
   sendCmd("AT+CGATT=1");
   sendCmd("AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"");
   sendCmd("AT+SAPBR=3,1,\"APN\",\"internet\"");
-  sendCmd("AT+SAPBR=1,1");
+  gsm.println("AT+SAPBR=1,1");
+  delay(5000); // GPRS bağlantısı için 5 saniye bekle
+  readGSM();
+
+  gsm.println("AT+SAPBR=2,1"); // IP adresini sorgula
   delay(2000);
-  sendCmd("AT+SAPBR=2,1");
+  readGSM();
 
   Serial.println("Hazir!");
 }
@@ -48,7 +52,7 @@ void loop() {
 
   httpPost(seviye);
 
-  delay(600000); // 10 dakika
+  delay(60000); // 1 dakika
 }
 
 void httpPost(int level) {
