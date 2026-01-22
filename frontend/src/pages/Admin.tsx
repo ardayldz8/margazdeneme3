@@ -18,6 +18,17 @@ interface Dealer {
 
 const ADMIN_PASSWORD = 'margaz2026';
 
+// Önceden tanımlı Device ID'ler
+const DEVICE_OPTIONS = [
+    { value: '', label: 'Cihaz Seçin...' },
+    { value: '1-aktup', label: '1-aktup (Arduino #1)' },
+    { value: '2-istanbul', label: '2-istanbul (Arduino #2)' },
+    { value: '3-ankara', label: '3-ankara (Arduino #3)' },
+    { value: '4-izmir', label: '4-izmir (Arduino #4)' },
+    { value: '5-bursa', label: '5-bursa (Arduino #5)' },
+    { value: 'custom', label: '➕ Özel ID Ekle...' },
+];
+
 export function Admin() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
@@ -35,6 +46,18 @@ export function Admin() {
         deviceId: '',
         status: 'Yürürlükte'
     });
+    const [showCustomDeviceId, setShowCustomDeviceId] = useState(false);
+    const [customDeviceId, setCustomDeviceId] = useState('');
+
+    const handleDeviceIdChange = (value: string) => {
+        if (value === 'custom') {
+            setShowCustomDeviceId(true);
+            setFormData({ ...formData, deviceId: '' });
+        } else {
+            setShowCustomDeviceId(false);
+            setFormData({ ...formData, deviceId: value });
+        }
+    };
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -192,12 +215,29 @@ export function Admin() {
                             onChange={(e) => setFormData({ ...formData, distributor: e.target.value })}
                             className="px-3 py-2 border rounded-lg"
                         />
-                        <input
-                            placeholder="Device ID (Arduino)"
-                            value={formData.deviceId}
-                            onChange={(e) => setFormData({ ...formData, deviceId: e.target.value })}
-                            className="px-3 py-2 border rounded-lg col-span-2"
-                        />
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Arduino Cihazı</label>
+                            <select
+                                value={showCustomDeviceId ? 'custom' : formData.deviceId}
+                                onChange={(e) => handleDeviceIdChange(e.target.value)}
+                                className="w-full px-3 py-2 border rounded-lg bg-white"
+                            >
+                                {DEVICE_OPTIONS.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                            {showCustomDeviceId && (
+                                <input
+                                    placeholder="Özel Device ID girin (örn: 6-antalya)"
+                                    value={customDeviceId}
+                                    onChange={(e) => {
+                                        setCustomDeviceId(e.target.value);
+                                        setFormData({ ...formData, deviceId: e.target.value });
+                                    }}
+                                    className="w-full px-3 py-2 border rounded-lg mt-2"
+                                />
+                            )}
+                        </div>
                         <div className="col-span-2 flex gap-2">
                             <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
                                 <Save className="h-4 w-4 inline mr-2" />
@@ -256,12 +296,23 @@ export function Admin() {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <input
-                                                    placeholder="Device ID"
-                                                    value={formData.deviceId}
-                                                    onChange={(e) => setFormData({ ...formData, deviceId: e.target.value })}
-                                                    className="px-2 py-1 border rounded w-32"
-                                                />
+                                                <select
+                                                    value={DEVICE_OPTIONS.some(o => o.value === formData.deviceId) ? formData.deviceId : 'custom'}
+                                                    onChange={(e) => handleDeviceIdChange(e.target.value)}
+                                                    className="px-2 py-1 border rounded w-32 bg-white"
+                                                >
+                                                    {DEVICE_OPTIONS.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    ))}
+                                                </select>
+                                                {!DEVICE_OPTIONS.some(o => o.value === formData.deviceId) && formData.deviceId && (
+                                                    <input
+                                                        value={formData.deviceId}
+                                                        onChange={(e) => setFormData({ ...formData, deviceId: e.target.value })}
+                                                        className="px-2 py-1 border rounded w-32 mt-1"
+                                                        placeholder="Özel ID"
+                                                    />
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-sm">%{dealer.tankLevel}</td>
                                             <td className="px-4 py-3">
