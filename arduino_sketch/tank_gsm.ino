@@ -100,7 +100,11 @@ void initGSM() {
   sendCmd("ATE0");
   sendCmd("AT+CSQ");
 
-  // GPRS
+  // GPRS - Önce eski bağlantıyı kapat
+  wdt_reset();
+  sendCmd("AT+SAPBR=0,1"); // Eski bearer'ı kapat
+  delay(2000);
+  
   wdt_reset();
   sendCmd("AT+CGATT=1");
   sendCmd("AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"");
@@ -112,7 +116,7 @@ void initGSM() {
 
   wdt_reset();
   gsm.println("AT+SAPBR=1,1");
-  delay(5000);
+  delay(7000); // Daha uzun bekle (5'ten 7'ye)
   readGSM();
 
   wdt_reset();
@@ -166,7 +170,9 @@ bool httpPost(int level) {
   // POST gönder
   gsm.println("AT+HTTPACTION=1");
 
-  // 10 saniye bekle ama WDT'yi besle (5+5 saniye)
+  // 15 saniye bekle ama WDT'yi besle (5+5+5 saniye)
+  delay(5000);
+  wdt_reset();
   delay(5000);
   wdt_reset();
   delay(5000);
@@ -174,7 +180,7 @@ bool httpPost(int level) {
 
   // Yanıtı oku ve başarı kontrolü yap
   String response = readGSMString();
-  bool success = (response.indexOf("200") > -1);
+  bool success = (response.indexOf("200") > -1 || response.indexOf("201") > -1);
 
   wdt_reset();
 
