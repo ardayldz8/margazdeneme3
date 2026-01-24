@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { ArrowLeft, Fuel, MapPin, Calendar, FileText, Building2, TrendingUp, Clock, AlertCircle } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -229,50 +229,42 @@ export function DealerDetail() {
                                 {loadingHistory ? 'Yükleniyor...' : 'Verileri Getir'}
                             </button>
                         </div>
-                        {historyData.length === 0 ? (
-                            <div className="h-[300px] flex items-center justify-center text-gray-400">
-                                Henüz geçmiş verisi yok. Arduino veri göndermeye başladığında grafik oluşacak.
-                            </div>
-                        ) : (
-                            <div className="h-[300px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={historyData}>
-                                        <defs>
-                                            <linearGradient id="colorLevel" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8} />
-                                                <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                        <XAxis
-                                            dataKey="time"
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fill: '#9ca3af', fontSize: 12 }}
-                                            dy={10}
-                                        />
-                                        <YAxis
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fill: '#9ca3af', fontSize: 12 }}
-                                            domain={[0, 100]}
-                                            unit="%"
-                                        />
-                                        <Tooltip
-                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                        />
-                                        <Area
-                                            type="monotone"
-                                            dataKey="level"
-                                            stroke="#0ea5e9"
-                                            strokeWidth={2}
-                                            fillOpacity={1}
-                                            fill="url(#colorLevel)"
-                                        />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
-                        )}
+                                {historyData.length === 0 ? (
+                                    <div className="h-[300px] flex items-center justify-center text-gray-400">
+                                        Henüz geçmiş verisi yok. Arduino veri göndermeye başladığında grafik oluşacak.
+                                    </div>
+                                ) : (
+                                    <div className="h-[300px] w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <ScatterChart>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                                <XAxis
+                                                    dataKey="time"
+                                                    axisLine={false}
+                                                    tickLine={false}
+                                                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                                    dy={10}
+                                                />
+                                                <YAxis
+                                                    axisLine={false}
+                                                    tickLine={false}
+                                                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                                    domain={[0, 100]}
+                                                    unit="%"
+                                                />
+                                                <Tooltip
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                />
+                                                <Scatter
+                                                    dataKey="level"
+                                                    fill="#0ea5e9"
+                                                    name="Tank Seviyesi"
+                                                    shape="circle"
+                                                />
+                                            </ScatterChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
                     </div>
 
                     {/* Map Card */}
