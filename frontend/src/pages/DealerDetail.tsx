@@ -236,7 +236,7 @@ export function DealerDetail() {
                                 ) : (
                                     <div className="w-full min-w-0">
                                         <ResponsiveContainer width="100%" height={300}>
-                                            <LineChart data={historyData} margin={{ left: 8, right: 8 }}>
+                                            <LineChart data={historyData} margin={{ left: 12, right: 12 }}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                                                 <XAxis
                                                     dataKey="time"
@@ -244,6 +244,7 @@ export function DealerDetail() {
                                                     tickLine={false}
                                                     tick={{ fill: '#9ca3af', fontSize: 12 }}
                                                     dy={10}
+                                                    minTickGap={50}
                                                 />
                                                 <YAxis
                                                     axisLine={false}
@@ -257,9 +258,9 @@ export function DealerDetail() {
                                                     type="monotone"
                                                     dataKey="level"
                                                     stroke="#0ea5e9"
-                                                    strokeWidth={0}
-                                                    dot={{ fill: '#0ea5e9', r: 5 }}
-                                                    activeDot={{ r: 6 }}
+                                                    strokeWidth={2}
+                                                    dot={{ fill: '#0ea5e9', r: 3 }}
+                                                    activeDot={{ r: 5 }}
                                                 />
                                             </LineChart>
                                         </ResponsiveContainer>
