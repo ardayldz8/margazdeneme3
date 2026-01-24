@@ -275,7 +275,7 @@ export function DealerDetail() {
                                     <div className="w-full min-w-0">
                                         <ResponsiveContainer width="100%" height={300}>
                                             <LineChart data={historyData} margin={{ left: 12, right: 12 }}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                                <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="#f0f0f0" />
                                                 <XAxis
                                                     dataKey="time"
                                                     axisLine={false}
