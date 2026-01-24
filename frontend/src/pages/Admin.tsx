@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Cpu, Server } from 'lucide-react';
+import { useAuthFetch } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 
 interface Dealer {
@@ -25,11 +26,8 @@ interface Device {
     lastSeen: string | null;
 }
 
-const ADMIN_PASSWORD = 'margaz2026';
-
 export function Admin() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
+    const authFetch = useAuthFetch();
     const [dealers, setDealers] = useState<Dealer[]>([]);
     const [devices, setDevices] = useState<Device[]>([]);
     const [loading] = useState(false);
@@ -45,11 +43,9 @@ export function Admin() {
     const [deviceForm, setDeviceForm] = useState({ deviceId: '', name: '', description: '' });
 
     useEffect(() => {
-        if (isAuthenticated) {
-            fetchDealers();
-            fetchDevices();
-        }
-    }, [isAuthenticated]);
+        fetchDealers();
+        fetchDevices();
+    }, []);
 
     const fetchDealers = async () => {
         try {
@@ -63,32 +59,30 @@ export function Admin() {
 
     const fetchDevices = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/devices`);
-            const data = await response.json();
-            setDevices(data);
+            const response = await authFetch(`${API_URL}/api/devices`);
+            if (response.ok) {
+                const data = await response.json();
+                setDevices(data);
+            }
         } catch (error) {
             console.error('Error fetching devices:', error);
         }
     };
 
-    const handleLogin = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (password === ADMIN_PASSWORD) setIsAuthenticated(true);
-        else alert('Yanlış şifre!');
-    };
-
     const handleCreateDealer = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch(`${API_URL}/api/dealers`, {
+            const response = await authFetch(`${API_URL}/api/dealers`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
             if (response.ok) {
                 setShowAddForm(false);
                 setFormData({ title: '', city: '', district: '', address: '', distributor: '', deviceId: '', status: 'Yürürlükte' });
                 fetchDealers();
+            } else {
+                const err = await response.json();
+                alert(err.error || 'Hata oluştu');
             }
         } catch (error) {
             console.error('Error creating dealer:', error);
@@ -98,9 +92,8 @@ export function Admin() {
     const handleCreateDevice = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch(`${API_URL}/api/devices`, {
+            const response = await authFetch(`${API_URL}/api/devices`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(deviceForm)
             });
             if (response.ok) {
@@ -118,14 +111,16 @@ export function Admin() {
 
     const handleUpdateDealer = async (id: string) => {
         try {
-            const response = await fetch(`${API_URL}/api/dealers/${id}`, {
+            const response = await authFetch(`${API_URL}/api/dealers/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
             if (response.ok) {
                 setEditingId(null);
                 fetchDealers();
+            } else {
+                const err = await response.json();
+                alert(err.error || 'Hata oluştu');
             }
         } catch (error) {
             console.error('Error updating dealer:', error);
@@ -135,7 +130,7 @@ export function Admin() {
     const handleDeleteDealer = async (id: string) => {
         if (!confirm('Bu bayiyi silmek istediğinize emin misiniz?')) return;
         try {
-            await fetch(`${API_URL}/api/dealers/${id}`, { method: 'DELETE' });
+            await authFetch(`${API_URL}/api/dealers/${id}`, { method: 'DELETE' });
             fetchDealers();
         } catch (error) {
             console.error('Error deleting dealer:', error);
@@ -145,7 +140,7 @@ export function Admin() {
     const handleDeleteDevice = async (id: string) => {
         if (!confirm('Bu cihazı silmek istediğinize emin misiniz?')) return;
         try {
-            await fetch(`${API_URL}/api/devices/${id}`, { method: 'DELETE' });
+            await authFetch(`${API_URL}/api/devices/${id}`, { method: 'DELETE' });
             fetchDevices();
         } catch (error) {
             console.error('Error deleting device:', error);
@@ -160,23 +155,6 @@ export function Admin() {
             deviceId: dealer.deviceId || '', status: dealer.status || 'Yürürlükte'
         });
     };
-
-    if (!isAuthenticated) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Admin Girişi</h1>
-                    <form onSubmit={handleLogin}>
-                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Şifre" className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4" />
-                        <button type="submit" className="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700">
-                            Giriş Yap
-                        </button>
-                    </form>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="space-y-6">

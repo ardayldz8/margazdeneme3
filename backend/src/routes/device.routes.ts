@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-// Get all devices
-router.get('/', async (req, res) => {
+// Get all devices (Authenticated users)
+router.get('/', authenticate, async (req, res) => {
     try {
         const devices = await prisma.device.findMany({
             orderBy: { createdAt: 'desc' }
@@ -17,8 +18,8 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Get single device
-router.get('/:id', async (req, res) => {
+// Get single device (Authenticated users)
+router.get('/:id', authenticate, async (req, res) => {
     try {
         const { id } = req.params;
         const device = await prisma.device.findUnique({
@@ -34,8 +35,8 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Create device
-router.post('/', async (req, res) => {
+// Create device (Admin only)
+router.post('/', authenticate, requireAdmin, async (req, res) => {
     try {
         const { deviceId, name, description } = req.body;
 
@@ -63,8 +64,8 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Update device
-router.put('/:id', async (req, res) => {
+// Update device (Admin only)
+router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { deviceId, name, description, status } = req.body;
@@ -80,8 +81,8 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// Delete device
-router.delete('/:id', async (req, res) => {
+// Delete device (Admin only)
+router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         await prisma.device.delete({

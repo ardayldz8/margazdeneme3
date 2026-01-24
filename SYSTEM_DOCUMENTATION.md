@@ -1,193 +1,180 @@
 # Margaz Tank Telemetri Sistemi - Teknik Dokümantasyon
 
-> **Son Güncelleme:** 21 Ocak 2026
+> **Son Güncelleme:** 24 Ocak 2026  
+> **Versiyon:** 1.1.0 (Auth + Security Update)
 
-## Sistem Mimarisi
+## 1. Sistem Mimarisi
 
-```
-┌──────────────────────┐
-│  Tank + GVL-101      │  Rochester Hall Effect Sensör
-│  (Fiziksel Sensör)   │  Analog çıkış: 0-5V
-└──────────┬───────────┘
-           │ A0 pin
-           ▼
-┌──────────────────────┐
-│     Arduino Uno      │  Sensör okuma + JSON oluşturma
-│   + SIM900 Shield    │  GPRS ile HTTP POST
-└──────────┬───────────┘
-           │ HTTP (port 80)
-           ▼
-┌──────────────────────┐
-│  AWS Lightsail       │  IP: 63.181.47.189
-│  "MargazProxy"       │  Node.js backend (PM2)
-│  Port: 80 → 3000     │  Endpoint: /api/telemetry
-└──────────┬───────────┘
-           │ HTTPS
-           ▼
-┌──────────────────────┐
-│  AWS API Gateway     │  mbgaykif87.execute-api.eu-north-1.amazonaws.com
-│  + Lambda + DynamoDB │  Veri depolama + işleme
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│  Frontend Dashboard  │  margaz.netlify.app
-│  (Netlify)           │  Tank doluluk görselleştirme
-└──────────────────────┘
+```mermaid
+graph TD
+    A[GVL-101 Sensör] -->|Analog 0-5V| B(Arduino Uno + SIM900)
+    B -->|GPRS/HTTP POST| C{AWS Lightsail Proxy}
+    C -->|Prisma/SQLite| D[(Yerel Veritabanı)]
+    C -->|Cloud Bridge| E[AWS API Gateway]
+    E --> F[AWS Lambda]
+    F --> G[(AWS DynamoDB)]
+    D -->|.json API| H[Frontend Dashboard]
+    H -->|React/Vite| I(Kullanıcı / Mobil & Web)
 ```
 
----
-
-## Bileşen Detayları
-
-### 1. Arduino + SIM900
+## 2. Donanım Katmanı (Arduino)
 
 **Dosya:** `arduino_sketch/tank_gsm.ino`
 
-| Parametre | Değer |
-|-----------|-------|
-| SoftwareSerial | Pin 7 (RX), Pin 8 (TX) |
-| Baud Rate | 9600 |
-| Sensör Pin | A0 (Analog) |
-| APN | `internet` (Turkcell) |
-| Gönderim Aralığı | 60 saniye |
+### Özellikler:
+*   **Watchdog Timer (WDT):** Sistem 8 saniye boyunca yanıt vermezse (takılırsa) Arduino otomatik olarak resetlenir.
+*   **Hata Yönetimi:** 3 ardışık başarısız gönderimden sonra GSM modülü yazılımsal olarak resetlenir.
+*   **Gönderim Sıklığı:** 10 dakika (600 saniye).
+*   **WDT-Safe Delays:** Uzun beklemeler (örn. 10sn) küçük parçalara bölünerek WDT beslenir, resetlenme önlenir.
 
-**Kalibrasyon Değerleri:**
-```cpp
-const int RAW_EMPTY = 10;   // Tank boşken okunan değer
-const int RAW_FULL = 1042;  // Tank doluyken okunan değer
-```
+### Parametreler:
+| Parametre | Değer | Açıklama |
+|-----------|-------|----------|
+| SoftwareSerial | 7 (RX), 8 (TX) | GSM modülü haberleşme pinleri |
+| Baud Rate | 9600 | Seri haberleşme hızı |
+| WDT Timeout | 8 Saniye | Takılma durumunda reset süresi |
+| Sensör Pin | A0 | Analog okuma pini |
 
-> ⚠️ Bu değerler GVL-101 ile kalibre edilmiştir. Sensör değişirse yeniden kalibrasyon gerekir.
-
-**JSON Format:**
+### JSON Formatı (Gönderilen Veri):
 ```json
 {
-  "tank_level": 47,
-  "device_id": "margaz_tank_01"
+  "tank_level": 75,
+  "device_id": "1-aktup"
 }
 ```
 
----
+## 3. Backend Katmanı (Lightsail Proxy)
 
-### 2. Lightsail Proxy (MargazProxy)
+**Konum:** `/home/bitnami/margaz-yeni/backend`
+**Teknoloji:** Node.js, Express, Prisma (SQLite), JWT Auth
 
-**Bağlantı Bilgileri:**
-- **IP:** 63.181.47.189
-- **SSH:** Lightsail Console → Connect using SSH
-- **Kullanıcı:** bitnami
+### Güvenlik:
+*   **JWT Authentication:** Tüm admin işlemleri için token gerekir.
+*   **Rate Limiting:** 
+    *   Genel: 1000 istek / 15 dakika
+    *   Auth: 20 istek / 15 dakika
+    *   Telemetry: 60 istek / dakika
+*   **Zod Validation:** Input doğrulama
 
-**Port Yönlendirme:**
+### Veritabanı Modelleri (Prisma):
+
+1.  **User:** Kullanıcı hesapları (email, şifre hash, rol).
+    *   Roller: `ADMIN`, `VIEWER`
+    *   İlk kayıt olan kullanıcı otomatik Admin olur.
+2.  **Dealer (Bayi):** Bayi bilgileri, konum, sözleşme detayları.
+3.  **Device (Cihaz):** Arduino cihaz kayıtları.
+    *   **Otomatik Kayıt:** Tanımsız bir `device_id`'den veri gelirse, sistem otomatik olarak cihazı oluşturur.
+4.  **TelemetryHistory (Geçmiş):** Zaman serisi verileri. Grafikler için kullanılır.
+
+### Önemli Endpoint'ler:
+
+| Endpoint | Method | Auth | Açıklama |
+|----------|--------|------|----------|
+| `/api/auth/login` | POST | - | Kullanıcı girişi |
+| `/api/auth/register` | POST | - | Yeni kullanıcı kaydı |
+| `/api/auth/me` | GET | Token | Kullanıcı bilgileri |
+| `/api/telemetry` | POST | - | Arduino veri gönderimi |
+| `/api/dealers` | GET | - | Bayi listesi |
+| `/api/dealers` | POST/PUT/DELETE | Admin | Bayi CRUD |
+| `/api/devices` | GET | Token | Cihaz listesi |
+| `/api/devices` | POST/PUT/DELETE | Admin | Cihaz CRUD |
+| `/api/sync/epdk` | POST | Admin | EPDK senkronizasyonu |
+
+## 4. Frontend Katmanı (Dashboard)
+
+**Teknoloji:** React, Vite, TailwindCSS, Recharts, Leaflet Maps
+**Hosting:** Netlify
+
+### Özellikler:
+*   **Mobil Uyumlu:** Hamburger menü, responsive tablolar (`overflow-x-auto`), mobil formlar.
+*   **Dashboard:**
+    *   Cihazı olmayan bayiler "Veri Yok" olarak gri renkte görünür.
+    *   Cihazı olanlar doluluk oranına göre (Kırmızı/Turuncu/Yeşil) renklenir.
+*   **Bayi Detay:**
+    *   **Canlı Grafik:** Son 24 saatlik gerçek veriyi gösterir ("Verileri Getir" butonu).
+    *   Konum haritası (OpenStreetMap).
+*   **Admin Paneli:**
+    *   Bayi Ekleme/Düzenleme.
+    *   Cihaz Yönetimi (Otomatik eklenen cihazları buradan yönetebilirsiniz).
+    *   Cihaz Atama: Bir cihazı bayiye atarken, önceki bayiden otomatik düşer (Unique Constraint Fix).
+
+## 5. Sorun Giderme (Troubleshooting)
+
+### Cihaz Veri Göndermiyorsa:
+1.  **Fiziksel Kontrol:**
+    *   Arduino ışıkları yanıyor mu?
+    *   SIM900 üzerindeki "Net" ışığı yanıp sönüyor mu? (Hızlı = arıyor, Yavaş = bağlı).
+2.  **Server Kontrolü (SSH):**
+    ```bash
+    pm2 logs margaz-proxy --lines 50
+    ```
+    *   `Device ID: undefined` hatası varsa: Arduino JSON formatı bozuktur veya eski kod çalışıyordur.
+    *   `No Arduino found` hatası: Veri hiç gelmiyor demektir.
+3.  **Çözüm:**
+    *   Arduino'nun elektriğini kesip geri takın (Hard Reset).
+    *   Güncel `tank_gsm.ino` kodunu yükleyin (WDT içerir).
+
+### 601 Hatası (Arduino Serial Monitor):
+*   **Anlamı:** Ağ hatası / GPRS bağlantı sorunu.
+*   **Otomatik Çözüm:** Yeni kodda sistem 3 hatadan sonra GSM modülünü otomatik resetler.
+
+## 6. Uzaktan Güncelleme (Lightsail)
+
+Kodda (Backend) bir değişiklik yapıldığında sunucuyu güncellemek için:
+
 ```bash
-# Port 80 gelen istekleri port 3000'e yönlendir
-sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 3000
+cd /home/bitnami/margaz-yeni/backend
+git pull
+npx prisma generate  # Schema değiştiyse
+npx prisma db push   # DB yapısı değiştiyse
+npm run build
+pm2 restart margaz-proxy
 ```
 
-> ⚠️ Bu komut sunucu restart edilirse kaybolur! Kalıcı yapmak için `/etc/rc.local` dosyasına ekle.
+## 7. SSL/HTTPS Kurulumu (Önerilen)
 
-**PM2 Servisi:**
-```bash
-pm2 status              # Servis durumu
-pm2 logs margaz-proxy   # Log'ları izle
-pm2 restart margaz-proxy # Yeniden başlat
+### Lightsail'de SSL Kurulumu:
+
+1.  **Domain Ayarı:** DNS'de A kaydı oluşturun (örn: `api.margaz.com` → Lightsail IP)
+
+2.  **SSL Script'ini Çalıştırın:**
+    ```bash
+    cd /home/bitnami/margaz-yeni/backend
+    chmod +x scripts/setup-ssl.sh
+    sudo ./scripts/setup-ssl.sh
+    ```
+
+3.  **Netlify Environment Variables:**
+    Site Settings → Environment Variables'a ekleyin:
+    ```
+    BACKEND_URL=https://api.margaz.com
+    ALLOWED_ORIGINS=https://margaz.netlify.app
+    ```
+
+4.  **Backend .env:**
+    ```
+    CORS_ORIGINS=https://margaz.netlify.app
+    ```
+
+### Arduino Güncelleme (HTTPS sonrası):
+Arduino SIM900 modülü HTTPS desteklemediği için, HTTP üzerinden gönderim devam eder.
+Lightsail Nginx, HTTP'yi kabul edip backend'e yönlendirir.
+
+## 8. Environment Variables
+
+### Backend (.env):
+```env
+DATABASE_URL="file:./dev.db"
+PORT=3000
+JWT_SECRET=your-super-secret-key
+JWT_EXPIRES_IN=7d
+AWS_TELEMETRY_URL=https://...execute-api...amazonaws.com/
+ANTI_CAPTCHA_KEY=your-key
+CORS_ORIGINS=https://margaz.netlify.app,http://localhost:5173
 ```
 
-**Backend Dosyaları:**
+### Netlify (Edge Functions):
 ```
-/home/bitnami/margaz-yeni/backend/
-├── dist/
-│   ├── server.js           # Ana sunucu
-│   └── routes/
-│       └── telemetry.routes.js  # /api/telemetry endpoint
-└── .env                    # Ortam değişkenleri
+BACKEND_URL=https://api.margaz.com
+ALLOWED_ORIGINS=https://margaz.netlify.app
 ```
-
----
-
-### 3. AWS Bileşenleri
-
-| Bileşen | Detay |
-|---------|-------|
-| Region | eu-north-1 (Stockholm) |
-| API Gateway | mbgaykif87.execute-api.eu-north-1.amazonaws.com |
-| Lambda | Telemetri işleme |
-| DynamoDB | Veri depolama |
-
----
-
-## Sorun Giderme
-
-### SIM900 Bağlantı Sorunları
-
-| Hata Kodu | Anlam | Çözüm |
-|-----------|-------|-------|
-| +HTTPACTION:1,200 | ✅ Başarılı | - |
-| +HTTPACTION:1,307 | Redirect | HTTPS yerine HTTP kullan |
-| +HTTPACTION:1,404 | Endpoint bulunamadı | URL path'i kontrol et |
-| +HTTPACTION:1,500 | Sunucu hatası | Lightsail loglarını kontrol et |
-| +HTTPACTION:1,601 | Bağlantı hatası | APN ve GPRS ayarlarını kontrol et |
-
-### Lightsail Kontrolleri
-
-```bash
-# Port 80'de ne çalışıyor?
-sudo netstat -tlnp | grep 80
-
-# Backend çalışıyor mu?
-pm2 list
-
-# Son loglar
-pm2 logs margaz-proxy --lines 50
-
-# Port yönlendirme aktif mi?
-sudo iptables -t nat -L -n
-```
-
-### Kalibrasyon Sorunları
-
-Eğer GVL ile dashboard arasında fark varsa:
-
-1. GVL'nin gösterdiği değeri ve Serial Monitor'deki Raw değeri not et
-2. En az 2 farklı seviyede ölçüm yap
-3. Lineer denklem kur:
-   ```
-   (RAW1, SEVIYE1) ve (RAW2, SEVIYE2) noktalarından:
-   m = (SEVIYE2 - SEVIYE1) / (RAW2 - RAW1)
-   RAW_EMPTY = RAW1 - (SEVIYE1 / m)
-   RAW_FULL = RAW_EMPTY + (100 / m)
-   ```
-
----
-
-## Güç Gereksinimleri
-
-| Bileşen | Voltaj | Akım |
-|---------|--------|------|
-| Arduino Uno | 5V veya 7-12V DC | 50mA |
-| SIM900 Shield | 5V | 2A (pik) |
-
-> ⚠️ SIM900 pik akımda 2A çeker. USB güç yetmez, harici adaptör kullan!
-
----
-
-## Önemli Dosyalar
-
-| Dosya | Açıklama |
-|-------|----------|
-| `arduino_sketch/tank_gsm.ino` | Ana Arduino kodu |
-| `arduino_sketch/sim900_test.ino` | SIM900 test kodu |
-| `backend/src/routes/telemetry.routes.ts` | Lightsail backend endpoint |
-| `backend/src/aws-setup/lambda/index.js` | AWS Lambda kodu |
-
----
-
-## Acil Durum İletişimi
-
-Sistem çalışmıyorsa sırasıyla kontrol et:
-
-1. **Arduino** - Serial Monitor'de hata var mı?
-2. **GSM Sinyal** - `AT+CSQ` ile sinyal gücü (10+ olmalı)
-3. **GPRS** - `AT+SAPBR=2,1` ile IP alıyor mu?
-4. **Lightsail** - `pm2 status` online mı?
-5. **Port** - `iptables` yönlendirmesi aktif mi?
-6. **AWS** - CloudWatch logları hata veriyor mu?

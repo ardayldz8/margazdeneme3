@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import axios from 'axios';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -75,16 +76,16 @@ router.post('/', async (req, res) => {
         console.log(`✅ Updated Dealer: ${updatedDealer.title} -> ${updatedDealer.tankLevel}% (History saved)`);
 
         // --- FORWARD TO AWS (Cloud Bridge) ---
-        try {
-            const axios = require('axios');
-            const AWS_URL = 'https://mbgaykif87.execute-api.eu-north-1.amazonaws.com/'; // Root endpoint for POST
-
-            console.log(`☁️ Forwarding to AWS: ${AWS_URL}`);
-            await axios.post(AWS_URL, req.body);
-            console.log('✅ AWS Forward Success');
-        } catch (awsError: any) {
-            console.error('❌ AWS Forward Failed:', awsError.message);
-            // Don't fail the request if AWS fails, just log it
+        const AWS_URL = process.env.AWS_TELEMETRY_URL;
+        if (AWS_URL) {
+            try {
+                console.log(`☁️ Forwarding to AWS: ${AWS_URL}`);
+                await axios.post(AWS_URL, req.body);
+                console.log('✅ AWS Forward Success');
+            } catch (awsError: any) {
+                console.error('❌ AWS Forward Failed:', awsError.message);
+                // Don't fail the request if AWS fails, just log it
+            }
         }
 
         res.json({ message: 'Data received & forwarded', dealer: updatedDealer.title });

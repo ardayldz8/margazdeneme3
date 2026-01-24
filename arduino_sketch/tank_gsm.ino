@@ -75,8 +75,8 @@ void loop() {
   // Watchdog'u besle - döngü sonu
   wdt_reset();
 
-  // 1 dakika bekle (10 saniyede bir watchdog besle)
-  for (int i = 0; i < 6; i++) {
+  // 10 dakika bekle (10 saniyede bir watchdog besle)
+  for (int i = 0; i < 60; i++) {
     delay(10000); // 10 saniye
     wdt_reset();  // Watchdog'u besle
   }
@@ -156,7 +156,12 @@ bool httpPost(int level) {
 
   // POST gönder
   gsm.println("AT+HTTPACTION=1");
-  delay(10000);
+
+  // 10 saniye bekle ama WDT'yi besle (5+5 saniye)
+  delay(5000);
+  wdt_reset();
+  delay(5000);
+  wdt_reset();
 
   // Yanıtı oku ve başarı kontrolü yap
   String response = readGSMString();

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -67,8 +68,8 @@ import { GeocodingService } from '../services/geocoding.service';
 
 // ... existing code ...
 
-// Trigger geocoding manually
-router.post('/geocode', async (req, res) => {
+// Trigger geocoding manually (Admin only)
+router.post('/geocode', authenticate, requireAdmin, async (req, res) => {
     try {
         const geocodingService = new GeocodingService();
         // Run in background
@@ -79,8 +80,8 @@ router.post('/geocode', async (req, res) => {
     }
 });
 
-// Create new dealer
-router.post('/', async (req, res) => {
+// Create new dealer (Admin only)
+router.post('/', authenticate, requireAdmin, async (req, res) => {
     try {
         const data = req.body;
         const dealer = await prisma.dealer.create({
@@ -103,8 +104,8 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Update dealer
-router.put('/:id', async (req, res) => {
+// Update dealer (Admin only)
+router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const data = req.body;
@@ -140,8 +141,8 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// Delete dealer
-router.delete('/:id', async (req, res) => {
+// Delete dealer (Admin only)
+router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         await prisma.dealer.delete({

@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { EpdkService } from '../services/epdk.service';
+import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 const epdkService = new EpdkService();
 
-router.post('/epdk', async (req, res) => {
+// EPDK Sync (Admin only - sensitive operation)
+router.post('/epdk', authenticate, requireAdmin, async (req, res) => {
     try {
         const result = await epdkService.syncDealers();
         res.json(result);

@@ -22,7 +22,8 @@ export function Dashboard() {
 
     useEffect(() => {
         fetchDealers();
-        const interval = setInterval(fetchDealers, 2000); // Poll every 2 seconds
+        // Poll every 30 seconds (was 2 seconds - too aggressive)
+        const interval = setInterval(fetchDealers, 30000);
         return () => clearInterval(interval);
     }, []);
 

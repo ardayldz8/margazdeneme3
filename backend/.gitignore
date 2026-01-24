@@ -1,4 +1,11 @@
 node_modules
 dist
 .env
+.env.local
 .DS_Store
+
+# Debug/log files from EPDK scraper
+debug_*.png
+debug_*.html
+logs/
+*.log
