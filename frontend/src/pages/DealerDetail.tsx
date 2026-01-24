@@ -49,6 +49,7 @@ export function DealerDetail() {
     const [loading, setLoading] = useState(true);
     const [historyData, setHistoryData] = useState<any[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
+    const [timeRange, setTimeRange] = useState<'1' | '24' | '168'>('24'); // 1 hour, 24 hours, 7 days (168 hours)
 
     useEffect(() => {
         const fetchDealer = async () => {
@@ -73,10 +74,17 @@ export function DealerDetail() {
         }
     }, [id]);
 
-    const fetchHistory = async () => {
+    useEffect(() => {
+        if (id && dealer) {
+            fetchHistory(timeRange);
+        }
+    }, [timeRange]);
+
+    const fetchHistory = async (hours?: string) => {
         setLoadingHistory(true);
+        const hoursToFetch = hours || timeRange;
         try {
-            const response = await fetch(`${API_URL}/api/dealers/${id}/history?hours=24`);
+            const response = await fetch(`${API_URL}/api/dealers/${id}/history?hours=${hoursToFetch}`);
             if (response.ok) {
                 const data = await response.json();
                 // Format data for chart
@@ -219,15 +227,45 @@ export function DealerDetail() {
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
                                 <TrendingUp className="h-5 w-5 text-primary-600" />
-                                Tank Seviyesi Geçmişi (Son 24 Saat)
+                                Tank Seviyesi Geçmişi
                             </h2>
-                            <button
-                                onClick={fetchHistory}
-                                disabled={loadingHistory}
-                                className="text-sm font-medium px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                {loadingHistory ? 'Yükleniyor...' : 'Verileri Getir'}
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <div className="flex bg-gray-100 rounded-lg p-1">
+                                    <button
+                                        onClick={() => setTimeRange('1')}
+                                        disabled={loadingHistory}
+                                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                                            timeRange === '1'
+                                                ? 'bg-white text-blue-600 shadow-sm'
+                                                : 'text-gray-600 hover:text-gray-900'
+                                        }`}
+                                    >
+                                        1 Saat
+                                    </button>
+                                    <button
+                                        onClick={() => setTimeRange('24')}
+                                        disabled={loadingHistory}
+                                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                                            timeRange === '24'
+                                                ? 'bg-white text-blue-600 shadow-sm'
+                                                : 'text-gray-600 hover:text-gray-900'
+                                        }`}
+                                    >
+                                        24 Saat
+                                    </button>
+                                    <button
+                                        onClick={() => setTimeRange('168')}
+                                        disabled={loadingHistory}
+                                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                                            timeRange === '168'
+                                                ? 'bg-white text-blue-600 shadow-sm'
+                                                : 'text-gray-600 hover:text-gray-900'
+                                        }`}
+                                    >
+                                        7 Gün
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                                 {historyData.length === 0 ? (
                                     <div className="h-[300px] flex items-center justify-center text-gray-400">
