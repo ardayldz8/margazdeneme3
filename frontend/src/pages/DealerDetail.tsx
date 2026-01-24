@@ -280,9 +280,10 @@ export function DealerDetail() {
                                                     dataKey="time"
                                                     axisLine={false}
                                                     tickLine={false}
-                                                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                                    tick={{ fill: '#9ca3af', fontSize: 11 }}
                                                     dy={10}
-                                                    minTickGap={50}
+                                                    minTickGap={80}
+                                                    interval="preserveStartEnd"
                                                 />
                                                 <YAxis
                                                     axisLine={false}
@@ -297,7 +298,7 @@ export function DealerDetail() {
                                                     dataKey="level"
                                                     stroke="#0ea5e9"
                                                     strokeWidth={2}
-                                                    dot={{ fill: '#0ea5e9', r: 3 }}
+                                                    dot={{ fill: '#0ea5e9', r: 2 }}
                                                     activeDot={{ r: 5 }}
                                                 />
                                             </LineChart>
