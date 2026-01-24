@@ -9,16 +9,24 @@
 
 SoftwareSerial gsm(7, 8);
 
-// Lightsail Proxy (HTTP - port 80)
-const char *HOST = "63.181.47.189";
+// ==========================================
+// AYARLAR - HER CIHAZ ICIN DEGISTIR
+// ==========================================
+#define DEVICE_ID   "1-aktup"      // Cihaz kimliği (benzersiz olmalı)
+#define HOST        "63.181.47.189" // Sunucu IP adresi
+#define APN         "internet"      // Operatör APN (genelde "internet")
 
-// Kalibrasyon
-const int RAW_EMPTY = 10;
-const int RAW_FULL = 1042;
+// Kalibrasyon (sensöre göre ayarla)
+#define RAW_EMPTY   10    // Boş tank analog değeri
+#define RAW_FULL    1042  // Dolu tank analog değeri
+
+// Gönderim ayarları
+#define SEND_INTERVAL_MIN  10  // Kaç dakikada bir gönderilsin
+#define MAX_ERRORS         3   // Kaç hatadan sonra GSM resetlensin
+// ==========================================
 
 // Hata sayacı
 int errorCount = 0;
-const int MAX_ERRORS = 3;
 
 void setup() {
   // WDT'yi başlangıçta devre dışı bırak (bootloader için)
@@ -75,8 +83,8 @@ void loop() {
   // Watchdog'u besle - döngü sonu
   wdt_reset();
 
-  // 10 dakika bekle (10 saniyede bir watchdog besle)
-  for (int i = 0; i < 60; i++) {
+  // SEND_INTERVAL_MIN dakika bekle (10 saniyede bir watchdog besle)
+  for (int i = 0; i < (SEND_INTERVAL_MIN * 6); i++) {
     delay(10000); // 10 saniye
     wdt_reset();  // Watchdog'u besle
   }
@@ -94,7 +102,11 @@ void initGSM() {
   wdt_reset();
   sendCmd("AT+CGATT=1");
   sendCmd("AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"");
-  sendCmd("AT+SAPBR=3,1,\"APN\",\"internet\"");
+  gsm.print("AT+SAPBR=3,1,\"APN\",\"");
+  gsm.print(APN);
+  gsm.println("\"");
+  delay(2000);
+  readGSM();
 
   wdt_reset();
   gsm.println("AT+SAPBR=1,1");
@@ -122,14 +134,10 @@ bool httpPost(int level) {
   sendCmd("AT+HTTPINIT");
   sendCmd("AT+HTTPPARA=\"CID\",1");
 
-  // URL
-  String url = "http://";
-  url += HOST;
-  url += "/api/telemetry";
-
-  gsm.print("AT+HTTPPARA=\"URL\",\"");
-  gsm.print(url);
-  gsm.println("\"");
+  // URL (char buffer - bellek dostu)
+  gsm.print(F("AT+HTTPPARA=\"URL\",\"http://"));
+  gsm.print(HOST);
+  gsm.println(F("/api/telemetry\""));
   delay(1000);
   readGSM();
 
@@ -137,14 +145,13 @@ bool httpPost(int level) {
 
   sendCmd("AT+HTTPPARA=\"CONTENT\",\"application/json\"");
 
-  // JSON
-  String json = "{\"tank_level\":";
-  json += level;
-  json += ",\"device_id\":\"1-aktup\"}";
+  // JSON (char buffer - bellek dostu)
+  char json[64];
+  sprintf(json, "{\"tank_level\":%d,\"device_id\":\"%s\"}", level, DEVICE_ID);
 
-  gsm.print("AT+HTTPDATA=");
-  gsm.print(json.length());
-  gsm.println(",10000");
+  gsm.print(F("AT+HTTPDATA="));
+  gsm.print(strlen(json));
+  gsm.println(F(",10000"));
   delay(500);
   readGSM();
 
