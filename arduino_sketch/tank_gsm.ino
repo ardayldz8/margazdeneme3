@@ -21,7 +21,7 @@ SoftwareSerial gsm(7, 8);
 #define RAW_FULL    1042  // Dolu tank analog değeri
 
 // Gönderim ayarları
-#define SEND_INTERVAL_MIN  10  // Kaç dakikada bir gönderilsin
+#define SEND_INTERVAL_MIN  10  // Kaç dakikada bir gönderilsin (10 dakika)
 #define MAX_ERRORS         3   // Kaç hatadan sonra GSM resetlensin
 // ==========================================
 
@@ -84,7 +84,9 @@ void loop() {
   wdt_reset();
 
   // SEND_INTERVAL_MIN dakika bekle (10 saniyede bir watchdog besle)
-  for (int i = 0; i < (SEND_INTERVAL_MIN * 6); i++) {
+  // 1 dakika = 60 saniye = 6 x 10 saniye
+  // 10 dakika = 60 x 10 saniye = 600 saniye
+  for (int i = 0; i < (SEND_INTERVAL_MIN * 60 / 10); i++) {
     delay(10000); // 10 saniye
     wdt_reset();  // Watchdog'u besle
   }
