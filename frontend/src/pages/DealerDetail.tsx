@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { ArrowLeft, Fuel, MapPin, Calendar, FileText, Building2, TrendingUp, Clock, AlertCircle } from 'lucide-react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -236,7 +236,7 @@ export function DealerDetail() {
                                 ) : (
                                     <div className="w-full min-w-0">
                                         <ResponsiveContainer width="100%" height={300}>
-                                            <ScatterChart>
+                                            <LineChart data={historyData} margin={{ left: 8, right: 8 }}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                                                 <XAxis
                                                     dataKey="time"
@@ -252,16 +252,16 @@ export function DealerDetail() {
                                                     domain={[0, 100]}
                                                     unit="%"
                                                 />
-                                                <Tooltip
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                />
-                                                <Scatter
+                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                                <Line
+                                                    type="monotone"
                                                     dataKey="level"
-                                                    fill="#0ea5e9"
-                                                    name="Tank Seviyesi"
-                                                    shape="circle"
+                                                    stroke="#0ea5e9"
+                                                    strokeWidth={0}
+                                                    dot={{ fill: '#0ea5e9', r: 5 }}
+                                                    activeDot={{ r: 6 }}
                                                 />
-                                            </ScatterChart>
+                                            </LineChart>
                                         </ResponsiveContainer>
                                     </div>
                                 )}
