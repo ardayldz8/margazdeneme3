@@ -276,10 +276,11 @@ export function DealerDetail() {
                                         <ResponsiveContainer width="100%" height={300}>
                                             <LineChart data={historyData} margin={{ left: 12, right: 12 }}>
                                                 <CartesianGrid 
-                                                    strokeDasharray="3 3" 
+                                                    strokeDasharray="0" 
                                                     vertical={true} 
                                                     horizontal={true}
-                                                    stroke="#d1d5db" 
+                                                    stroke="#9ca3af" 
+                                                    strokeWidth={0.5}
                                                     verticalCoordinatesGenerator={(props) => {
                                                         return props.xAxis.tickPositions || [];
                                                     }}
