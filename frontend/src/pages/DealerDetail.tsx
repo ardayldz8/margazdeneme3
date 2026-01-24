@@ -215,7 +215,7 @@ export function DealerDetail() {
                     </div>
 
                     {/* Chart Card */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-w-0">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
                                 <TrendingUp className="h-5 w-5 text-primary-600" />
@@ -234,8 +234,8 @@ export function DealerDetail() {
                                         Henüz geçmiş verisi yok. Arduino veri göndermeye başladığında grafik oluşacak.
                                     </div>
                                 ) : (
-                                    <div className="h-[300px] w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
+                                    <div className="w-full min-w-0">
+                                        <ResponsiveContainer width="100%" height={300}>
                                             <ScatterChart>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                                                 <XAxis
