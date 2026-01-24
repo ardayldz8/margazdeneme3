@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth.middleware';
 
@@ -10,6 +10,11 @@ const prisma = new PrismaClient();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+
+// JWT sign options
+const jwtOptions: SignOptions = {
+    expiresIn: JWT_EXPIRES_IN as string
+};
 
 // Validation schemas
 const loginSchema = z.object({
@@ -34,7 +39,7 @@ router.post('/login', async (req, res) => {
         if (!result.success) {
             res.status(400).json({ 
                 error: 'Validation failed', 
-                details: result.error.errors 
+                details: result.error.issues 
             });
             return;
         }
@@ -62,7 +67,7 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign(
             { id: user.id, email: user.email, role: user.role },
             JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
+            jwtOptions
         );
 
         res.json({
@@ -92,7 +97,7 @@ router.post('/register', async (req, res) => {
         if (!result.success) {
             res.status(400).json({ 
                 error: 'Validation failed', 
-                details: result.error.errors 
+                details: result.error.issues 
             });
             return;
         }
@@ -130,7 +135,7 @@ router.post('/register', async (req, res) => {
         const token = jwt.sign(
             { id: user.id, email: user.email, role: user.role },
             JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
+            jwtOptions
         );
 
         res.status(201).json({
