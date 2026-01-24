@@ -86,17 +86,22 @@ void loop() {
   // 10 dakika bekle (60 x 10 saniye = 600 saniye)
   Serial.println(F("--- 10 dakika bekleniyor... ---"));
   for (int i = 0; i < 60; i++) {
-    delay(10000); // 10 saniye
-    wdt_reset();  // Watchdog'u besle
+    // 10 saniyeyi 2x5 saniye olarak böl (WDT 8 saniye, güvenli olmak için 5 saniye)
+    delay(5000);
+    wdt_reset();
+    delay(5000);
+    wdt_reset();
     
     // Her 6 iterasyonda (1 dakikada) bir bilgi ver
     if ((i + 1) % 6 == 0) {
       Serial.print(F("Beklenen sure: "));
       Serial.print((i + 1) / 6);
       Serial.println(F(" dakika"));
+      wdt_reset(); // Serial yazdırma sırasında da besle
     }
   }
   Serial.println(F("--- Bekleme tamamlandi! ---"));
+  wdt_reset();
 }
 
 void initGSM() {
