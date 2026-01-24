@@ -9,12 +9,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
-
-// JWT sign options
-const jwtOptions: SignOptions = {
-    expiresIn: JWT_EXPIRES_IN as string
-};
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as jwt.SignOptions['expiresIn'];
 
 // Validation schemas
 const loginSchema = z.object({
@@ -67,7 +62,7 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign(
             { id: user.id, email: user.email, role: user.role },
             JWT_SECRET,
-            jwtOptions
+            { expiresIn: JWT_EXPIRES_IN }
         );
 
         res.json({
@@ -135,7 +130,7 @@ router.post('/register', async (req, res) => {
         const token = jwt.sign(
             { id: user.id, email: user.email, role: user.role },
             JWT_SECRET,
-            jwtOptions
+            { expiresIn: JWT_EXPIRES_IN }
         );
 
         res.status(201).json({
