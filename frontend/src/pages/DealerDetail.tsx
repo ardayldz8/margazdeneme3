@@ -281,9 +281,6 @@ export function DealerDetail() {
                                                     horizontal={true}
                                                     stroke="#9ca3af" 
                                                     strokeWidth={0.5}
-                                                    verticalCoordinatesGenerator={(props) => {
-                                                        return props.xAxis.tickPositions || [];
-                                                    }}
                                                 />
                                                 <XAxis
                                                     dataKey="time"
