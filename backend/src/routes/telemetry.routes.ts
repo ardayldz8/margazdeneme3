@@ -11,7 +11,27 @@ router.post('/', async (req, res) => {
     try {
         const { tank_level, device_id } = req.body;
 
-        console.log(`📡 Telemetry Received: Level=${tank_level}% (Device: ${device_id})`);
+        // Validate required fields
+        if (tank_level === undefined || tank_level === null) {
+            console.warn(`⚠️ Missing tank_level from device: ${device_id}`);
+            res.status(400).json({ error: 'tank_level is required' });
+            return;
+        }
+
+        if (device_id === undefined || device_id === null) {
+            console.warn(`⚠️ Missing device_id in request`);
+            res.status(400).json({ error: 'device_id is required' });
+            return;
+        }
+
+        const level = Number(tank_level);
+        if (isNaN(level) || level < 0 || level > 100) {
+            console.warn(`⚠️ Invalid tank_level: ${tank_level} from device: ${device_id}`);
+            res.status(400).json({ error: 'tank_level must be a number between 0-100' });
+            return;
+        }
+
+        console.log(`📡 Telemetry Received: Level=${level}% (Device: ${device_id})`);
 
         // === AUTO-REGISTER DEVICE ===
         // Cihaz tablosunda var mı kontrol et, yoksa otomatik ekle
@@ -58,7 +78,7 @@ router.post('/', async (req, res) => {
         const updatedDealer = await prisma.dealer.update({
             where: { id: dealer.id },
             data: {
-                tankLevel: Number(tank_level),
+                tankLevel: level,
                 lastData: new Date()
             }
         });
@@ -69,7 +89,7 @@ router.post('/', async (req, res) => {
             data: {
                 deviceId: device_id,
                 dealerId: dealer.id,
-                tankLevel: Number(tank_level)
+                tankLevel: level
             }
         });
 
