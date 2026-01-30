@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -76,6 +76,10 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
         });
         res.json(device);
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+            res.status(404).json({ error: 'Device not found' });
+            return;
+        }
         console.error('Error updating device:', error);
         res.status(500).json({ error: 'Failed to update device' });
     }
@@ -90,6 +94,10 @@ router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
         });
         res.json({ message: 'Device deleted successfully' });
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+            res.status(404).json({ error: 'Device not found' });
+            return;
+        }
         console.error('Error deleting device:', error);
         res.status(500).json({ error: 'Failed to delete device' });
     }

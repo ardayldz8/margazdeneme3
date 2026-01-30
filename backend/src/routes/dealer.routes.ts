@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -136,6 +136,10 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
         });
         res.json(dealer);
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+            res.status(404).json({ error: 'Dealer not found' });
+            return;
+        }
         console.error('Update dealer error:', error);
         res.status(500).json({ error: 'Failed to update dealer' });
     }
@@ -150,6 +154,10 @@ router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
         });
         res.json({ message: 'Dealer deleted successfully' });
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+            res.status(404).json({ error: 'Dealer not found' });
+            return;
+        }
         console.error('Delete dealer error:', error);
         res.status(500).json({ error: 'Failed to delete dealer' });
     }
