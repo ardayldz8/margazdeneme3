@@ -1,14 +1,16 @@
 # Margaz Tank Telemetri Sistemi - Teknik Dokümantasyon
 
-> **Son Güncelleme:** 24 Ocak 2026  
-> **Versiyon:** 1.1.0 (Auth + Security Update)
+> **Son Güncelleme:** 30 Ocak 2026
+> **Versiyon:** 1.1.1 (Input Validation + Bug Fixes)
 
 ## 1. Sistem Mimarisi
 
 ```mermaid
 graph TD
-    A[GVL-101 Sensör] -->|Analog 0-5V| B(Arduino Uno + SIM900)
-    B -->|GPRS/HTTP POST| C{AWS Lightsail Proxy}
+    A[GVL-101 Sensör] -->|Analog 0-5V| B1(Arduino Uno + SIM900)
+    A -->|Analog 0-5V| B2(Arduino Nano + SIM800L)
+    B1 -->|GPRS/HTTP POST| C{AWS Lightsail Proxy}
+    B2 -->|GPRS/HTTP POST| C
     C -->|Prisma/SQLite| D[(Yerel Veritabanı)]
     C -->|Cloud Bridge| E[AWS API Gateway]
     E --> F[AWS Lambda]
@@ -18,6 +20,10 @@ graph TD
 ```
 
 ## 2. Donanım Katmanı (Arduino)
+
+Bu sistem iki donanım profili ile çalışır:
+
+### 2.1 Arduino Uno + SIM900 (Shield)
 
 **Dosya:** `arduino_sketch/tank_gsm.ino`
 
@@ -30,7 +36,25 @@ graph TD
 ### Parametreler:
 | Parametre | Değer | Açıklama |
 |-----------|-------|----------|
-| SoftwareSerial | 7 (RX), 8 (TX) | GSM modülü haberleşme pinleri |
+| SoftwareSerial | 7 (RX), 8 (TX) | SIM900 shield seri pinleri (jumper ayarına göre) |
+| Baud Rate | 9600 | Seri haberleşme hızı |
+| WDT Timeout | 8 Saniye | Takılma durumunda reset süresi |
+| Sensör Pin | A0 | Analog okuma pini |
+
+### 2.2 Arduino Nano + SIM800L
+
+**Dosya:** `arduino_sketch/tank_gsm_v2_d3d2.ino`
+
+### Özellikler:
+*   **Watchdog Timer (WDT):** 8 saniye (HTTP işlemlerinde güvenli reset).
+*   **Gönderim Sıklığı:** 10 dakika (600 saniye).
+*   **UART:** D3 (RX), D2 (TX) - SIM800L ile doğrulanmış pinler.
+*   **Baud Rate:** 9600 (sabit).
+
+### Parametreler:
+| Parametre | Değer | Açıklama |
+|-----------|-------|----------|
+| SoftwareSerial | 3 (RX), 2 (TX) | SIM800L haberleşme pinleri |
 | Baud Rate | 9600 | Seri haberleşme hızı |
 | WDT Timeout | 8 Saniye | Takılma durumunda reset süresi |
 | Sensör Pin | A0 | Analog okuma pini |
@@ -178,3 +202,71 @@ CORS_ORIGINS=https://margaz.netlify.app,http://localhost:5173
 BACKEND_URL=https://api.margaz.com
 ALLOWED_ORIGINS=https://margaz.netlify.app
 ```
+
+---
+
+## 9. Sistem İyileştirme Geçmişi
+
+### 30 Ocak 2026 - Phase 1: Kritik Hata Düzeltmesi
+
+#### 9.1 tank_level Validasyonu Eklendi
+
+**Sorun:**
+- Arduino cihazlardan gelen telemetri verilerinde `tank_level` alanı bazen `undefined` geliyordu
+- Bu durum Prisma'da "Argument 'tankLevel' is missing" hatasına neden oluyordu
+- Veri kaybı ve sistem hataları meydana geliyordu
+
+**Çözüm:**
+- [`backend/src/routes/telemetry.routes.ts`](backend/src/routes/telemetry.routes.ts:10) dosyasına input validasyonu eklendi
+- `tank_level` ve `device_id` alanları için zorunluluk kontrolü
+- 0-100 aralığı validasyonu
+- `NaN` kontrolü
+
+**Değişiklikler:**
+```typescript
+// Validasyon eklendi
+if (tank_level === undefined || tank_level === null) {
+    res.status(400).json({ error: 'tank_level is required' });
+    return;
+}
+
+const level = Number(tank_level);
+if (isNaN(level) || level < 0 || level > 100) {
+    res.status(400).json({ error: 'tank_level must be between 0-100' });
+    return;
+}
+```
+
+**Deploy:**
+- Commit: `96ffb15`
+- Lightsail'de başarıyla deploy edildi
+- PM2 restart yapıldı
+- Sistem stabil çalışıyor
+
+**Sonuç:**
+- ✅ Eksik veya hatalı veriler artık 400 Bad Request ile reddediliyor
+- ✅ Sistem hataları önlendi
+- ✅ Veri bütünlüğü sağlandı
+
+---
+
+## 10. Gelecek İyileştirmeler (Yol Haritası)
+
+### Phase 1: Risksiz İşlemler (Devam)
+- [ ] Test Framework (Jest) kurulumu
+- [ ] Logging sistemi (Winston) entegrasyonu
+- [ ] Swagger/OpenAPI dokümantasyonu
+
+### Phase 2: Dikkatli İşlemler
+- [ ] PrismaClient singleton pattern
+- [ ] JWT secret validasyonu
+- [ ] Input validation genişletme
+
+### Phase 3: Yüksek Riskli İşlemler
+- [ ] Database migration stratejisi düzeltme
+- [ ] API key sistemi (cihaz doğrulama)
+
+### Phase 4: İsteğe Bağlı
+- [ ] SQLite → PostgreSQL geçişi
+- [ ] Docker containerization
+- [ ] CI/CD pipeline

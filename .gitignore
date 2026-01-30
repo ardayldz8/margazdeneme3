@@ -6,3 +6,13 @@ build/
 coverage/
 .vscode/
 *.log
+
+# Documentation files
+*.md
+MARGAZ_AI_NOTES.md
+SYSTEM_DOCUMENTATION.md
+
+# Arduino sketches
+arduino_sketch/
+arduino_sk/
+*.ino

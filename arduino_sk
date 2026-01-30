@@ -1,0 +1,85 @@
+/*
+  ============================================================
+  MARGAZ TANK KALIBRASYON TEST - v1.0
+  ============================================================
+  Bu kod tank seviye sensörünün kalibrasyon değerlerini bulmak için kullanılır.
+  
+  KULLANIM:
+  1. Bu kodu Arduino'ya yükle
+  2. Seri monitörü aç (9600 baud)
+  3. Tankı tamamen BOŞalt ve 5-10 dakika bekle - RAW_EMPTY değerini not al
+  4. Tankı tamamen DOLDUR ve 5-10 dakika bekle - RAW_FULL değerini not al
+  5. Bu değerleri tank_gsm.ino dosyasındaki RAW_EMPTY ve RAW_FULL olarak gir
+  
+  NOT: Sensör değerleri stabilize olması için zaman gerekebilir.
+       Her okuma arası 1 saniye bekleme var.
+  ============================================================
+*/
+
+// Kalibrasyon için örnek değerler (KENDİ DEĞERLERİNİZLE DEĞİŞTİRİN)
+// Şu anki değerler sadece başlangıç için
+#define RAW_EMPTY   10    // Tank boşken beklenen ham değer
+#define RAW_FULL    1023  // Tank doluyken beklenen ham değer (max 1023)
+
+void setup() {
+  Serial.begin(9600);
+  
+  // Analog referans - varsayılan 5V (veya 3.3V bazı boardlarda)
+  // Eğer harici referans kullanıyorsan: analogReference(EXTERNAL);
+  
+  delay(1000);
+  
+  Serial.println(F("============================================"));
+  Serial.println(F("  MARGAZ TANK KALIBRASYON TEST"));
+  Serial.println(F("============================================"));
+  Serial.println();
+  Serial.println(F("TANK BOŞKEN: RAW değerini not al"));
+  Serial.println(F("TANK DOLUKEN: RAW değerini not al"));
+  Serial.println(F("Bu değerleri tank_gsm.ino dosyasına gir"));
+  Serial.println();
+  Serial.println(F("Mevcut kalibrasyon:"));
+  Serial.print(F("  RAW_EMPTY = "));
+  Serial.println(RAW_EMPTY);
+  Serial.print(F("  RAW_FULL = "));
+  Serial.println(RAW_FULL);
+  Serial.println();
+  Serial.println(F("Okumalar basliyor..."));
+  Serial.println(F("--------------------------------------------"));
+}
+
+void loop() {
+  // Çoklu okuma ve ortalama (daha stabil değer için)
+  long sum = 0;
+  int samples = 10;
+  
+  for (int i = 0; i < samples; i++) {
+    sum += analogRead(A0);
+    delay(50);  // 50ms bekle
+  }
+  
+  int raw = sum / samples;
+  
+  // Voltaj hesapla (5V referans varsayımıyla)
+  float voltage = raw * (5.0 / 1023.0);
+  
+  // Mevcut kalibrasyona göre seviye hesapla
+  int seviye = map(raw, RAW_EMPTY, RAW_FULL, 0, 100);
+  seviye = constrain(seviye, 0, 100);
+  
+  // Ekrana yaz
+  Serial.print(F("RAW: "));
+  Serial.print(raw);
+  Serial.print(F(" | Voltaj: "));
+  Serial.print(voltage, 2);  // 2 ondalık
+  Serial.print(F("V | Seviye: %"));
+  Serial.print(seviye);
+  
+  // Gerçek doluluk için yer (kullanıcı manuel girecek)
+  Serial.print(F(" | Gercek: %"));
+  Serial.print(F("__"));  // Kullanıcı burayı doldursun
+  
+  Serial.println();
+  
+  // 1 saniye bekle
+  delay(1000);
+}

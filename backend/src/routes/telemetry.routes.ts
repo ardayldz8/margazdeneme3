@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
+import logger from '../utils/logger';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -13,25 +14,34 @@ router.post('/', async (req, res) => {
 
         // Validate required fields
         if (tank_level === undefined || tank_level === null) {
-            console.warn(`⚠️ Missing tank_level from device: ${device_id}`);
+            logger.warn('Missing tank_level in telemetry request', { device_id, body: req.body });
             res.status(400).json({ error: 'tank_level is required' });
             return;
         }
 
         if (device_id === undefined || device_id === null) {
-            console.warn(`⚠️ Missing device_id in request`);
+            logger.warn('Missing device_id in telemetry request', { body: req.body });
             res.status(400).json({ error: 'device_id is required' });
             return;
         }
 
         const level = Number(tank_level);
         if (isNaN(level) || level < 0 || level > 100) {
-            console.warn(`⚠️ Invalid tank_level: ${tank_level} from device: ${device_id}`);
+            logger.warn('Invalid tank_level in telemetry request', {
+                device_id,
+                tank_level,
+                body: req.body
+            });
             res.status(400).json({ error: 'tank_level must be a number between 0-100' });
             return;
         }
 
-        console.log(`📡 Telemetry Received: Level=${level}% (Device: ${device_id})`);
+        logger.info('Telemetry received', {
+            device_id,
+            level,
+            ip: req.ip,
+            userAgent: req.get('user-agent')
+        });
 
         // === AUTO-REGISTER DEVICE ===
         // Cihaz tablosunda var mı kontrol et, yoksa otomatik ekle
@@ -49,7 +59,7 @@ router.post('/', async (req, res) => {
                     status: 'active'
                 }
             });
-            console.log(`🆕 Yeni cihaz otomatik kaydedildi: ${device_id}`);
+            logger.info('New device auto-registered', { device_id });
         }
 
         // Cihazın lastSeen'ini güncelle
@@ -65,7 +75,7 @@ router.post('/', async (req, res) => {
 
         // Bulunamazsa uyarı ver ama başarılı dön (cihaz kaydedildi)
         if (!dealer) {
-            console.warn(`⚠️ Device ${device_id} henüz bir bayiye atanmamış`);
+            logger.warn('Device not assigned to dealer', { device_id });
             res.json({
                 message: 'Device registered but not assigned to a dealer',
                 device: device_id,
@@ -93,24 +103,40 @@ router.post('/', async (req, res) => {
             }
         });
 
-        console.log(`✅ Updated Dealer: ${updatedDealer.title} -> ${updatedDealer.tankLevel}% (History saved)`);
+        logger.info('Dealer updated with telemetry', {
+            dealer_id: updatedDealer.id,
+            dealer_title: updatedDealer.title,
+            tank_level: updatedDealer.tankLevel,
+            device_id
+        });
 
         // --- FORWARD TO AWS (Cloud Bridge) ---
         const AWS_URL = process.env.AWS_TELEMETRY_URL;
         if (AWS_URL) {
             try {
-                console.log(`☁️ Forwarding to AWS: ${AWS_URL}`);
+                logger.info('Forwarding telemetry to AWS', {
+                    aws_url: AWS_URL,
+                    device_id
+                });
                 await axios.post(AWS_URL, req.body);
-                console.log('✅ AWS Forward Success');
+                logger.info('AWS forward successful', { device_id });
             } catch (awsError: any) {
-                console.error('❌ AWS Forward Failed:', awsError.message);
+                logger.error('AWS forward failed', {
+                    device_id,
+                    error: awsError.message,
+                    stack: awsError.stack
+                });
                 // Don't fail the request if AWS fails, just log it
             }
         }
 
         res.json({ message: 'Data received & forwarded', dealer: updatedDealer.title });
     } catch (error) {
-        console.error('❌ Telemetry Error:', error);
+        logger.error('Telemetry processing error', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            body: req.body
+        });
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
