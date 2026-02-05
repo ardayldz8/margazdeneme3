@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get all dealers
 router.get('/', async (req, res) => {
@@ -36,15 +36,50 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Get dealer telemetry history (Son 24 saat)
+// Get dealer telemetry history (Son 24 saat veya tarih araligi)
 router.get('/:id/history', async (req, res) => {
     try {
         const { id } = req.params;
+        const start = req.query.start as string | undefined;
+        const end = req.query.end as string | undefined;
+
+        if (start && end) {
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+
+            if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+                res.status(400).json({ error: 'Invalid start or end date' });
+                return;
+            }
+
+            if (startDate > endDate) {
+                res.status(400).json({ error: 'Start date must be before end date' });
+                return;
+            }
+
+            const history = await prisma.telemetryHistory.findMany({
+                where: { dealerId: id },
+                orderBy: { timestamp: 'asc' },
+                select: {
+                    tankLevel: true,
+                    timestamp: true
+                }
+            });
+
+            const startMs = startDate.getTime();
+            const endMs = endDate.getTime();
+
+            const filtered = history.filter((item) => {
+                const ts = new Date(item.timestamp).getTime();
+                return ts >= startMs && ts <= endMs;
+            });
+
+            res.json(filtered);
+            return;
+        }
+
         const hours = parseInt(req.query.hours as string) || 24;
-
-        // Son X saatlik veri
         const since = new Date(Date.now() - hours * 60 * 60 * 1000);
-
         const history = await prisma.telemetryHistory.findMany({
             where: {
                 dealerId: id,
