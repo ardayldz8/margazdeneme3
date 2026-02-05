@@ -49,7 +49,8 @@ export function DealerDetail() {
     const [loading, setLoading] = useState(true);
     const [historyData, setHistoryData] = useState<any[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
-    const [timeRange, setTimeRange] = useState<'1' | '24' | '168'>('24'); // 1 hour, 24 hours, 7 days (168 hours)
+    const [startInput, setStartInput] = useState('');
+    const [endInput, setEndInput] = useState('');
 
     useEffect(() => {
         const fetchDealer = async () => {
@@ -69,22 +70,33 @@ export function DealerDetail() {
         };
 
         if (id) {
+            const now = new Date();
+            const start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            const formatInput = (d: Date) => {
+                const pad = (n: number) => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            };
+
+            const startValue = formatInput(start);
+            const endValue = formatInput(now);
+            setStartInput(startValue);
+            setEndInput(endValue);
             fetchDealer();
-            fetchHistory();
+            fetchHistory(startValue, endValue);
         }
     }, [id]);
 
-    useEffect(() => {
-        if (id && dealer) {
-            fetchHistory(timeRange);
-        }
-    }, [timeRange]);
-
-    const fetchHistory = async (hours?: string) => {
+    const fetchHistory = async (start?: string, end?: string) => {
         setLoadingHistory(true);
-        const hoursToFetch = hours || timeRange;
         try {
-            const response = await fetch(`${API_URL}/api/dealers/${id}/history?hours=${hoursToFetch}`);
+            const params = new URLSearchParams();
+            if (start && end) {
+                params.set('start', new Date(start).toISOString());
+                params.set('end', new Date(end).toISOString());
+            } else {
+                params.set('hours', '24');
+            }
+            const response = await fetch(`${API_URL}/api/dealers/${id}/history?${params.toString()}`);
             if (response.ok) {
                 const data = await response.json();
                 // Format data for chart
@@ -104,6 +116,11 @@ export function DealerDetail() {
         } finally {
             setLoadingHistory(false);
         }
+    };
+
+    const applyRange = () => {
+        if (!startInput || !endInput) return;
+        fetchHistory(startInput, endInput);
     };
 
     const getProgressColor = (level: number) => {
@@ -229,42 +246,32 @@ export function DealerDetail() {
                                 <TrendingUp className="h-5 w-5 text-primary-600" />
                                 Tank Seviyesi Geçmişi
                             </h2>
-                            <div className="flex items-center gap-2">
-                                <div className="flex bg-gray-100 rounded-lg p-1">
-                                    <button
-                                        onClick={() => setTimeRange('1')}
-                                        disabled={loadingHistory}
-                                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                                            timeRange === '1'
-                                                ? 'bg-white text-blue-600 shadow-sm'
-                                                : 'text-gray-600 hover:text-gray-900'
-                                        }`}
-                                    >
-                                        1 Saat
-                                    </button>
-                                    <button
-                                        onClick={() => setTimeRange('24')}
-                                        disabled={loadingHistory}
-                                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                                            timeRange === '24'
-                                                ? 'bg-white text-blue-600 shadow-sm'
-                                                : 'text-gray-600 hover:text-gray-900'
-                                        }`}
-                                    >
-                                        24 Saat
-                                    </button>
-                                    <button
-                                        onClick={() => setTimeRange('168')}
-                                        disabled={loadingHistory}
-                                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                                            timeRange === '168'
-                                                ? 'bg-white text-blue-600 shadow-sm'
-                                                : 'text-gray-600 hover:text-gray-900'
-                                        }`}
-                                    >
-                                        7 Gün
-                                    </button>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-2">
+                                    <label className="text-xs text-gray-500">Başlangıç</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={startInput}
+                                        onChange={(event) => setStartInput(event.target.value)}
+                                        className="text-sm border border-gray-200 rounded-md px-2 py-1"
+                                    />
                                 </div>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-xs text-gray-500">Bitiş</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={endInput}
+                                        onChange={(event) => setEndInput(event.target.value)}
+                                        className="text-sm border border-gray-200 rounded-md px-2 py-1"
+                                    />
+                                </div>
+                                <button
+                                    onClick={applyRange}
+                                    disabled={loadingHistory || !startInput || !endInput}
+                                    className="px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                    Uygula
+                                </button>
                             </div>
                         </div>
                                 {historyData.length === 0 ? (
