@@ -276,7 +276,7 @@ export function DealerDetail() {
                         </div>
                                 {historyData.length === 0 ? (
                                     <div className="h-[300px] flex items-center justify-center text-gray-400">
-                                        Henüz geçmiş verisi yok. Arduino veri göndermeye başladığında grafik oluşacak.
+                                        Son 24 saat içinde veri yok.
                                     </div>
                                 ) : (
                                     <div className="w-full min-w-0">
