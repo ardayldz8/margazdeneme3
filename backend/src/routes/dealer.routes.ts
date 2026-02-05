@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { Prisma } from '@prisma/client';
-import prisma from '../lib/prisma';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
+const prisma = new PrismaClient();
 
 // Get all dealers
 router.get('/', async (req, res) => {
@@ -69,7 +69,7 @@ router.get('/:id/history', async (req, res) => {
             const startMs = startDate.getTime();
             const endMs = endDate.getTime();
 
-            const filtered = history.filter((item) => {
+            const filtered = history.filter((item: { timestamp: Date }) => {
                 const ts = new Date(item.timestamp).getTime();
                 return ts >= startMs && ts <= endMs;
             });
