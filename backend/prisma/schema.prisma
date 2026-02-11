@@ -57,8 +57,22 @@ model Device {
   description String?            // Açıklama
   status      String   @default("active")  // active, inactive, maintenance
   lastSeen    DateTime?          // Son veri gönderimi
+  auth        DeviceAuth?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model DeviceAuth {
+  id         String   @id @default(uuid())
+  deviceId   String   @unique
+  authMode   String   @default("signed") // signed, legacy
+  secret     String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  device     Device   @relation(fields: [deviceId], references: [deviceId], onDelete: Cascade)
+
+  @@index([authMode, active])
 }
 
 // Telemetri Geçmişi (Zaman Serisi)
