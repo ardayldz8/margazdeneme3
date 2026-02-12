@@ -209,7 +209,7 @@ export function Dashboard() {
                     })}
                 </div>
             ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 2xl:grid-cols-10 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-9 gap-2.5">
                     {dealers.map((dealer) => {
                         const expiration = getExpirationStatus(dealer);
                         return (
@@ -227,10 +227,13 @@ export function Dashboard() {
                                         {expiration.type === 'Lisans' ? 'L' : 'S'}
                                     </div>
                                 )}
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-[10px] font-medium text-gray-600 truncate max-w-[72%]" title={dealer.title}>
+                                <div className="mb-1.5">
+                                    <span className="block text-[10px] font-medium text-gray-700 leading-tight max-h-[2.3em] overflow-hidden pr-4" title={dealer.title}>
                                         {dealer.title}
                                     </span>
+                                </div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-[9px] text-gray-400">Doluluk</span>
                                     {dealer.deviceId ? (
                                         <span className={`text-xs font-bold ${getTextColor(dealer.tankLevel)}`}>
                                             %{dealer.tankLevel}
