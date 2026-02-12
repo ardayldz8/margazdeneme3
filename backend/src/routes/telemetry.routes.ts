@@ -84,6 +84,10 @@ function verifySignedTelemetry(reqBody: any, deviceId: string, level: number, se
 
 // POST /api/telemetry
 // Receives: { "tank_level": 55, "voltage": 12.5, "device_id": "demo_unit" }
+router.get('/time', (_req, res) => {
+    res.json({ epoch_ms: Date.now() });
+});
+
 router.post('/', async (req, res) => {
     try {
         const { tank_level, device_id } = req.body;
