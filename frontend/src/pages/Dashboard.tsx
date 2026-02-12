@@ -13,19 +13,22 @@ interface Dealer {
 }
 
 import { API_URL } from '../config';
+import { loadUiSettings } from '../lib/uiSettings';
 
 export function Dashboard() {
+    const uiSettings = loadUiSettings();
+    const { criticalLevel, warningLevel } = uiSettings.thresholds;
+
     const [dealers, setDealers] = useState<Dealer[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [viewMode, setViewMode] = useState<'normal' | 'compact'>('normal');
+    const [viewMode, setViewMode] = useState<'normal' | 'compact'>(uiSettings.dashboard.defaultView);
 
     useEffect(() => {
         fetchDealers();
-        // Poll every 30 seconds (was 2 seconds - too aggressive)
-        const interval = setInterval(fetchDealers, 30000);
+        const interval = setInterval(fetchDealers, uiSettings.dashboard.refreshSeconds * 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [uiSettings.dashboard.refreshSeconds]);
 
 
 
@@ -51,14 +54,14 @@ export function Dashboard() {
     };
 
     const getProgressColor = (level: number) => {
-        if (level < 20) return 'bg-red-500';
-        if (level < 50) return 'bg-orange-400';
+        if (level < criticalLevel) return 'bg-red-500';
+        if (level < warningLevel) return 'bg-orange-400';
         return 'bg-green-500';
     };
 
     const getTextColor = (level: number) => {
-        if (level < 20) return 'text-red-600';
-        if (level < 50) return 'text-orange-600';
+        if (level < criticalLevel) return 'text-red-600';
+        if (level < warningLevel) return 'text-orange-600';
         return 'text-green-600';
     };
 

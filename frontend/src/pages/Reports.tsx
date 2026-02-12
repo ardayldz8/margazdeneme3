@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Download, FileText, Fuel, Search, ShieldAlert } from 'lucide-react';
 
 import { API_URL } from '../config';
+import { loadUiSettings } from '../lib/uiSettings';
 
 interface Dealer {
     id: string;
@@ -24,7 +25,7 @@ function daysUntil(dateString: string | null): number | null {
     return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function isStale(lastData: string | null, thresholdHours = 24): boolean {
+function isStale(lastData: string | null, thresholdHours: number): boolean {
     if (!lastData) return true;
     const ts = new Date(lastData).getTime();
     if (Number.isNaN(ts)) return true;
@@ -44,10 +45,10 @@ function formatDate(value: string | null): string {
     });
 }
 
-function getLevelBucket(dealer: Dealer): 'critical' | 'warning' | 'normal' | 'nodata' {
+function getLevelBucket(dealer: Dealer, criticalLevel: number, warningLevel: number): 'critical' | 'warning' | 'normal' | 'nodata' {
     if (!dealer.deviceId) return 'nodata';
-    if (dealer.tankLevel < 20) return 'critical';
-    if (dealer.tankLevel < 50) return 'warning';
+    if (dealer.tankLevel < criticalLevel) return 'critical';
+    if (dealer.tankLevel < warningLevel) return 'warning';
     return 'normal';
 }
 
@@ -59,6 +60,9 @@ function bucketLabel(bucket: 'critical' | 'warning' | 'normal' | 'nodata'): stri
 }
 
 export function Reports() {
+    const uiSettings = loadUiSettings();
+    const { criticalLevel, warningLevel, staleHours } = uiSettings.thresholds;
+
     const [dealers, setDealers] = useState<Dealer[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -105,11 +109,11 @@ export function Reports() {
     }, [dealers, search, cityFilter, distributorFilter]);
 
     const stats = useMemo(() => {
-        const critical = filtered.filter((d) => getLevelBucket(d) === 'critical').length;
-        const warning = filtered.filter((d) => getLevelBucket(d) === 'warning').length;
-        const normal = filtered.filter((d) => getLevelBucket(d) === 'normal').length;
-        const noData = filtered.filter((d) => getLevelBucket(d) === 'nodata').length;
-        const stale = filtered.filter((d) => d.deviceId && isStale(d.lastData)).length;
+        const critical = filtered.filter((d) => getLevelBucket(d, criticalLevel, warningLevel) === 'critical').length;
+        const warning = filtered.filter((d) => getLevelBucket(d, criticalLevel, warningLevel) === 'warning').length;
+        const normal = filtered.filter((d) => getLevelBucket(d, criticalLevel, warningLevel) === 'normal').length;
+        const noData = filtered.filter((d) => getLevelBucket(d, criticalLevel, warningLevel) === 'nodata').length;
+        const stale = filtered.filter((d) => d.deviceId && isStale(d.lastData, staleHours)).length;
         const expiring = filtered.filter((d) => {
             const l = daysUntil(d.endDate);
             const c = daysUntil(d.contractEndDate);
@@ -127,7 +131,7 @@ export function Reports() {
             stale,
             expiring
         };
-    }, [filtered]);
+    }, [filtered, criticalLevel, warningLevel, staleHours]);
 
     const distribution = useMemo(() => {
         const total = stats.total || 1;
@@ -149,7 +153,7 @@ export function Reports() {
 
     const handleExportCsv = () => {
         const rows = filtered.map((d) => {
-            const bucket = getLevelBucket(d);
+            const bucket = getLevelBucket(d, criticalLevel, warningLevel);
             return [
                 d.title,
                 d.licenseNo,
@@ -158,7 +162,7 @@ export function Reports() {
                 d.deviceId || '-',
                 d.deviceId ? `%${d.tankLevel}` : 'Veri Yok',
                 bucketLabel(bucket),
-                isStale(d.lastData) ? 'Evet' : 'Hayir',
+                isStale(d.lastData, staleHours) ? 'Evet' : 'Hayir',
                 formatDate(d.lastData),
                 d.endDate || '-',
                 d.contractEndDate || '-'
@@ -338,7 +342,7 @@ export function Reports() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
-                                {filtered.map((d) => {
+            {filtered.map((d) => {
                                     const l = daysUntil(d.endDate);
                                     const c = daysUntil(d.contractEndDate);
                                     const expiryText =
@@ -365,8 +369,8 @@ export function Reports() {
                                             </td>
                                             <td className="px-4 py-3 text-sm">
                                                 <div className="flex items-center gap-2">
-                                                    {isStale(d.lastData) ? <AlertTriangle className="h-3.5 w-3.5 text-amber-600" /> : null}
-                                                    <span className={`${isStale(d.lastData) ? 'text-amber-700' : 'text-gray-700'}`}>{formatDate(d.lastData)}</span>
+                                                    {isStale(d.lastData, staleHours) ? <AlertTriangle className="h-3.5 w-3.5 text-amber-600" /> : null}
+                                                    <span className={`${isStale(d.lastData, staleHours) ? 'text-amber-700' : 'text-gray-700'}`}>{formatDate(d.lastData)}</span>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-700">{expiryText}</td>
