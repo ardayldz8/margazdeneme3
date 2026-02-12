@@ -149,7 +149,7 @@ export function DealerDetail() {
     return (
         <div className="space-y-6 pb-10 max-w-7xl mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => navigate(-1)}
@@ -169,9 +169,9 @@ export function DealerDetail() {
                         </div>
                     </div>
                 </div>
-                <div className="text-right">
+                <div className="sm:text-right">
                     <div className="text-sm text-gray-500">Son Veri Güncellemesi</div>
-                    <div className="font-medium text-gray-900 flex items-center justify-end gap-1">
+                    <div className="font-medium text-gray-900 flex items-center sm:justify-end gap-1">
                         <Clock className="h-4 w-4" />
                         {dealer.lastData ? new Date(dealer.lastData).toLocaleString('tr-TR') : 'Yok'}
                     </div>
@@ -184,64 +184,40 @@ export function DealerDetail() {
                 {/* Left Column: Stats & Chart */}
                 <div className="lg:col-span-2 space-y-6">
 
-                    {/* Tank Level & Quick Stats Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Tank Level Card */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10">
-                                <Fuel className="h-24 w-24 text-primary-600" />
-                            </div>
-                            <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                <Fuel className="h-5 w-5 text-primary-600" />
-                                Tank Doluluk
-                            </h2>
-                            <div className="flex items-baseline gap-2 mb-4">
-                                <span className="text-5xl font-bold text-gray-900">%{dealer.tankLevel}</span>
-                                <span className="text-sm text-gray-500">doluluk oranı</span>
-                            </div>
-                            <div className="relative h-4 w-full bg-gray-100 rounded-full overflow-hidden mb-2">
-                                <div
-                                    className={`absolute top-0 left-0 h-full ${getProgressColor(dealer.tankLevel)} transition-all duration-1000 ease-out`}
-                                    style={{ width: `${dealer.tankLevel}%` }}
-                                />
-                            </div>
-                            <p className="text-xs text-gray-500 mt-2">
-                                {dealer.tankLevel < 20 ? (
-                                    <span className="flex items-center gap-1 text-red-600 font-medium">
-                                        <AlertCircle className="h-3 w-3" />
-                                        Kritik seviye! Dolum yapılması önerilir.
-                                    </span>
-                                ) : (
-                                    "Tank seviyesi normal aralıkta."
-                                )}
-                            </p>
+                    {/* Tank Level Card */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                            <Fuel className="h-24 w-24 text-primary-600" />
                         </div>
-
-                        {/* Estimated Usage Card (Mock) */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5 text-blue-600" />
-                                Tahmini Tüketim
-                            </h2>
-                            <div className="space-y-4">
-                                <div>
-                                    <div className="text-sm text-gray-500">Günlük Ortalama</div>
-                                    <div className="text-2xl font-bold text-gray-900">%4.2</div>
-                                </div>
-                                <div>
-                                    <div className="text-sm text-gray-500">Tahmini Bitiş Süresi</div>
-                                    <div className="text-2xl font-bold text-gray-900">12 Gün</div>
-                                </div>
-                                <div className="text-xs text-gray-400 pt-2 border-t border-gray-100">
-                                    * Son 7 günlük verilere göre hesaplanmıştır.
-                                </div>
-                            </div>
+                        <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <Fuel className="h-5 w-5 text-primary-600" />
+                            Tank Doluluk
+                        </h2>
+                        <div className="flex items-baseline gap-2 mb-4">
+                            <span className="text-5xl font-bold text-gray-900">%{dealer.tankLevel}</span>
+                            <span className="text-sm text-gray-500">doluluk oranı</span>
                         </div>
+                        <div className="relative h-4 w-full bg-gray-100 rounded-full overflow-hidden mb-2">
+                            <div
+                                className={`absolute top-0 left-0 h-full ${getProgressColor(dealer.tankLevel)} transition-all duration-1000 ease-out`}
+                                style={{ width: `${dealer.tankLevel}%` }}
+                            />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                            {dealer.tankLevel < 20 ? (
+                                <span className="flex items-center gap-1 text-red-600 font-medium">
+                                    <AlertCircle className="h-3 w-3" />
+                                    Kritik seviye! Dolum yapılması önerilir.
+                                </span>
+                            ) : (
+                                'Tank seviyesi normal aralıkta.'
+                            )}
+                        </p>
                     </div>
 
                     {/* Chart Card */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-w-0">
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
                             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
                                 <TrendingUp className="h-5 w-5 text-primary-600" />
                                 Tank Seviyesi Geçmişi
@@ -274,50 +250,50 @@ export function DealerDetail() {
                                 </button>
                             </div>
                         </div>
-                                {historyData.length === 0 ? (
-                                    <div className="h-[300px] flex items-center justify-center text-gray-400">
-                                        Son 24 saat içinde veri yok.
-                                    </div>
-                                ) : (
-                                    <div className="w-full min-w-0">
-                                        <ResponsiveContainer width="100%" height={300}>
-                                            <LineChart data={historyData} margin={{ left: 12, right: 12 }}>
-                                                <CartesianGrid 
-                                                    strokeDasharray="0" 
-                                                    vertical={true} 
-                                                    horizontal={true}
-                                                    stroke="#9ca3af" 
-                                                    strokeWidth={0.5}
-                                                />
-                                                <XAxis
-                                                    dataKey="time"
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#9ca3af', fontSize: 11 }}
-                                                    dy={10}
-                                                    minTickGap={80}
-                                                    interval="preserveStartEnd"
-                                                />
-                                                <YAxis
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: '#9ca3af', fontSize: 12 }}
-                                                    domain={[0, 100]}
-                                                    unit="%"
-                                                />
-                                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                                <Line
-                                                    type="monotone"
-                                                    dataKey="level"
-                                                    stroke="#0ea5e9"
-                                                    strokeWidth={2}
-                                                    dot={{ fill: '#0ea5e9', r: 2 }}
-                                                    activeDot={{ r: 5 }}
-                                                />
-                                            </LineChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                )}
+                        {historyData.length === 0 ? (
+                            <div className="h-[300px] flex items-center justify-center text-gray-400">
+                                Son 24 saat içinde veri yok.
+                            </div>
+                        ) : (
+                            <div className="w-full min-w-0">
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <LineChart data={historyData} margin={{ left: 12, right: 12 }}>
+                                        <CartesianGrid
+                                            strokeDasharray="0"
+                                            vertical={true}
+                                            horizontal={true}
+                                            stroke="#9ca3af"
+                                            strokeWidth={0.5}
+                                        />
+                                        <XAxis
+                                            dataKey="time"
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: '#9ca3af', fontSize: 11 }}
+                                            dy={10}
+                                            minTickGap={80}
+                                            interval="preserveStartEnd"
+                                        />
+                                        <YAxis
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                            domain={[0, 100]}
+                                            unit="%"
+                                        />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="level"
+                                            stroke="#0ea5e9"
+                                            strokeWidth={2}
+                                            dot={{ fill: '#0ea5e9', r: 2 }}
+                                            activeDot={{ r: 5 }}
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
                     </div>
 
                     {/* Map Card */}
