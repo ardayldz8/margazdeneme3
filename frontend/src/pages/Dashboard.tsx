@@ -209,27 +209,27 @@ export function Dashboard() {
                     })}
                 </div>
             ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 2xl:grid-cols-10 gap-2.5">
                     {dealers.map((dealer) => {
                         const expiration = getExpirationStatus(dealer);
                         return (
                             <Link
                                 to={`/dealers/${dealer.id}`}
                                 key={dealer.id}
-                                className={`bg-white rounded-lg border p-2 hover:border-primary-500 transition-colors cursor-pointer group relative ${expiration?.color === 'red' ? 'border-red-300 bg-red-50' :
+                                className={`bg-white rounded-lg border p-2.5 hover:border-primary-500 transition-colors cursor-pointer group relative min-h-[66px] ${expiration?.color === 'red' ? 'border-red-300 bg-red-50' :
                                     expiration?.color === 'yellow' ? 'border-yellow-300 bg-yellow-50' : 'border-gray-200'
                                     }`}
-                                title={`${dealer.title} - %${dealer.tankLevel}${expiration ? `\n⚠️ ${expiration.message}` : ''}`}
+                                title={`${dealer.title} - ${dealer.deviceId ? `%${dealer.tankLevel}` : 'Veri Yok'}${expiration ? `\n⚠️ ${expiration.message}` : ''}`}
                             >
                                 {expiration && (
-                                    <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border border-white flex items-center justify-center text-[8px] font-bold text-white ${expiration.color === 'red' ? 'bg-red-500' : 'bg-yellow-500'
+                                    <div className={`absolute top-1 right-1 w-3.5 h-3.5 rounded-full border border-white flex items-center justify-center text-[8px] font-bold text-white ${expiration.color === 'red' ? 'bg-red-500' : 'bg-yellow-500'
                                         }`}>
                                         {expiration.type === 'Lisans' ? 'L' : 'S'}
                                     </div>
                                 )}
                                 <div className="flex justify-between items-center mb-1">
-                                    <span className="text-[10px] font-medium text-gray-600 truncate max-w-[70%]">
-                                        {dealer.title.split(' ')[0]}...
+                                    <span className="text-[10px] font-medium text-gray-600 truncate max-w-[72%]" title={dealer.title}>
+                                        {dealer.title}
                                     </span>
                                     {dealer.deviceId ? (
                                         <span className={`text-xs font-bold ${getTextColor(dealer.tankLevel)}`}>
@@ -240,10 +240,14 @@ export function Dashboard() {
                                     )}
                                 </div>
                                 <div className="relative h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                    <div
-                                        className={`absolute top-0 left-0 h-full ${getProgressColor(dealer.tankLevel)} transition-all duration-500`}
-                                        style={{ width: `${dealer.tankLevel}%` }}
-                                    />
+                                    {dealer.deviceId ? (
+                                        <div
+                                            className={`absolute top-0 left-0 h-full ${getProgressColor(dealer.tankLevel)} transition-all duration-500`}
+                                            style={{ width: `${dealer.tankLevel}%` }}
+                                        />
+                                    ) : (
+                                        <div className="absolute top-0 left-0 h-full w-full bg-gray-200" />
+                                    )}
                                 </div>
                             </Link>
                         );
