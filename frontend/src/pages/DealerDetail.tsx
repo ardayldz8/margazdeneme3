@@ -170,9 +170,9 @@ export function DealerDetail() {
                     </div>
                 </div>
                 <div className="sm:text-right">
-                    <div className="text-sm text-gray-500">Son Veri Güncellemesi</div>
-                    <div className="font-medium text-gray-900 flex items-center sm:justify-end gap-1">
-                        <Clock className="h-4 w-4" />
+                    <div className="text-base sm:text-sm text-gray-500">Son Veri Güncellemesi</div>
+                    <div className="font-semibold text-xl sm:text-lg text-gray-900 flex items-start sm:items-center sm:justify-end gap-2 leading-tight break-words mt-1">
+                        <Clock className="h-5 w-5 sm:h-4 sm:w-4 mt-0.5 sm:mt-0 shrink-0" />
                         {dealer.lastData ? new Date(dealer.lastData).toLocaleString('tr-TR') : 'Yok'}
                     </div>
                 </div>
