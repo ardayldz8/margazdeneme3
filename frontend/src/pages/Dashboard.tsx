@@ -195,11 +195,11 @@ export function Dashboard() {
                                     </div>
 
                                     <div className="flex justify-between items-center pt-1">
-                                        <p className="text-[10px] text-gray-400">
+                                        <p className="text-sm sm:text-xs text-gray-500 font-medium">
                                             {formatDate(dealer.lastData)}
                                         </p>
                                         {expiration && (
-                                            <span className={`text-[10px] font-bold flex items-center gap-1 ${expiration.color === 'red' ? 'text-red-700' : 'text-yellow-700'
+                                            <span className={`text-xs sm:text-[10px] font-bold flex items-center gap-1 ${expiration.color === 'red' ? 'text-red-700' : 'text-yellow-700'
                                                 }`}>
                                                 <AlertTriangle className="h-3 w-3" />
                                                 {expiration.remainingDays < 90 ? `${expiration.remainingDays} Gün Kaldı` : `${Math.ceil(expiration.remainingDays / 30)} Ay Kaldı`}
