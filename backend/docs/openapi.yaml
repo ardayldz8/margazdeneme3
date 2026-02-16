@@ -1,0 +1,1132 @@
+openapi: 3.0.3
+info:
+  title: Margaz Tank Telemetry API
+  version: 1.0.0
+  description: "API documentation for the Margaz Tank Telemetry backend. Frontend: https://margaz.netlify.app"
+  license:
+    name: Proprietary
+    url: https://margaz.netlify.app
+servers:
+  - url: http://63.181.47.189
+    description: Lightsail direct
+tags:
+  - name: Auth
+    description: Authentication and user management
+  - name: Telemetry
+    description: Device telemetry ingestion
+  - name: Dealers
+    description: Dealer management and telemetry history
+  - name: Devices
+    description: Device management
+  - name: Sync
+    description: External data synchronization
+  - name: Health
+    description: Service health check
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service health
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                required: [status, timestamp]
+              example:
+                status: ok
+                timestamp: "2026-01-30T18:30:00.000Z"
+                version: "1.1.0"
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: admin@example.com
+              password: "secret123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                message: "Giriş başarılı"
+                token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                user:
+                  id: "b7b22a4a-3e6e-4df2-9fa0-1b9d8c9a0a11"
+                  email: admin@example.com
+                  name: "Admin"
+                  role: ADMIN
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: viewer@example.com
+              password: "secret123"
+              name: "Viewer"
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change password
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+            example:
+              currentPassword: "oldpass123"
+              newPassword: "newpass123"
+      responses:
+        '200':
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/telemetry:
+    post:
+      tags: [Telemetry]
+      summary: Submit telemetry data
+      operationId: submitTelemetry
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelemetryRequest'
+            example:
+              tank_level: 75
+              device_id: "1-aktup"
+              voltage: 12.4
+      responses:
+        '200':
+          description: Telemetry accepted
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TelemetrySuccess'
+                  - $ref: '#/components/schemas/TelemetryNeedsAssignment'
+              examples:
+                success:
+                  value:
+                    message: "Data received & forwarded"
+                    dealer: "Aktup Test"
+                needsAssignment:
+                  value:
+                    message: "Device registered but not assigned to a dealer"
+                    device: "2-aktup"
+                    needsAssignment: true
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/dealers:
+    get:
+      tags: [Dealers]
+      summary: List dealers
+      operationId: listDealers
+      security: []
+      responses:
+        '200':
+          description: Dealer list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dealer'
+              example:
+                - id: "84f99a90-7c47-47ad-9740-57235997d536"
+                  title: "Aktup Test"
+                  deviceId: "2-aktup"
+                  tankLevel: 60
+                  lastData: "2026-01-30T10:35:51.986Z"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Dealers]
+      summary: Create dealer (Admin only)
+      operationId: createDealer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DealerCreateRequest'
+            example:
+              title: "Yeni Bayi"
+              city: "KAYSERI"
+              district: "DEVELI"
+              address: "Ornek Mah. No:1"
+              deviceId: "2-aktup"
+              tankLevel: 55
+      responses:
+        '201':
+          description: Dealer created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dealer'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/dealers/{id}:
+    get:
+      tags: [Dealers]
+      summary: Get dealer by id
+      operationId: getDealer
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/DealerId'
+      responses:
+        '200':
+          description: Dealer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dealer'
+              example:
+                id: "84f99a90-7c47-47ad-9740-57235997d536"
+                title: "Aktup Test"
+                deviceId: "2-aktup"
+                tankLevel: 60
+                lastData: "2026-01-30T10:35:51.986Z"
+        '404':
+          description: Dealer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Dealers]
+      summary: Update dealer (Admin only)
+      operationId: updateDealer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DealerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DealerUpdateRequest'
+            example:
+              title: "Aktup Test"
+              deviceId: "2-aktup"
+              tankLevel: 65
+      responses:
+        '200':
+          description: Dealer updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dealer'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Dealer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Dealers]
+      summary: Delete dealer (Admin only)
+      operationId: deleteDealer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DealerId'
+      responses:
+        '200':
+          description: Dealer deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Dealer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/dealers/{id}/history:
+    get:
+      tags: [Dealers]
+      summary: Get dealer telemetry history
+      operationId: getDealerHistory
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/DealerId'
+        - name: hours
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 24
+            minimum: 1
+          description: History window in hours
+      responses:
+        '200':
+          description: Telemetry history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TelemetryHistory'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/dealers/geocode:
+    post:
+      tags: [Dealers]
+      summary: Trigger geocoding process (Admin only)
+      operationId: geocodeDealers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Geocoding started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/devices:
+    get:
+      tags: [Devices]
+      summary: List devices
+      operationId: listDevices
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Device list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+              example:
+                - id: "5ce9d7a1-87b1-4c8d-89b2-3d1b6f60a2d2"
+                  deviceId: "1-aktup"
+                  name: "Arduino 1-aktup"
+                  description: "Otomatik kaydedildi"
+                  status: "active"
+                  lastSeen: "2026-01-30T18:12:10.501Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Devices]
+      summary: Create device (Admin only)
+      operationId: createDevice
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceCreateRequest'
+            example:
+              deviceId: "3-aktup"
+              name: "Arduino 3-aktup"
+              description: "Manuel ekleme"
+      responses:
+        '201':
+          description: Device created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/devices/{id}:
+    get:
+      tags: [Devices]
+      summary: Get device by id
+      operationId: getDevice
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+              example:
+                id: "5ce9d7a1-87b1-4c8d-89b2-3d1b6f60a2d2"
+                deviceId: "1-aktup"
+                name: "Arduino 1-aktup"
+                description: "Otomatik kaydedildi"
+                status: "active"
+                lastSeen: "2026-01-30T18:12:10.501Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Devices]
+      summary: Update device (Admin only)
+      operationId: updateDevice
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceUpdateRequest'
+            example:
+              name: "Arduino 1-aktup"
+              status: "active"
+      responses:
+        '200':
+          description: Device updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Devices]
+      summary: Delete device (Admin only)
+      operationId: deleteDevice
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Device deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/sync/epdk:
+    post:
+      tags: [Sync]
+      summary: Sync dealers from EPDK (Admin only)
+      operationId: syncEpdk
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Sync failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    DealerId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    DeviceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    ValidationError:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+      required: [error]
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+      required: [email, password]
+      example:
+        email: admin@example.com
+        password: "secret123"
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        name:
+          type: string
+      required: [email, password]
+      example:
+        email: viewer@example.com
+        password: "secret123"
+        name: "Viewer"
+    ChangePasswordRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 6
+      required: [currentPassword, newPassword]
+      example:
+        currentPassword: "oldpass123"
+        newPassword: "newpass123"
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, VIEWER]
+      required: [id, email, role]
+    AuthResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/AuthUser'
+      required: [message, token, user]
+      example:
+        message: "Giriş başarılı"
+        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          id: "b7b22a4a-3e6e-4df2-9fa0-1b9d8c9a0a11"
+          email: admin@example.com
+          name: "Admin"
+          role: ADMIN
+    MeResponse:
+      type: object
+      properties:
+        user:
+          allOf:
+            - $ref: '#/components/schemas/AuthUser'
+            - type: object
+              properties:
+                createdAt:
+                  type: string
+                  format: date-time
+      required: [user]
+    TelemetryRequest:
+      type: object
+      properties:
+        tank_level:
+          type: number
+          minimum: 0
+          maximum: 100
+        device_id:
+          type: string
+        voltage:
+          type: number
+      required: [tank_level, device_id]
+      example:
+        tank_level: 75
+        device_id: "1-aktup"
+        voltage: 12.4
+    TelemetrySuccess:
+      type: object
+      properties:
+        message:
+          type: string
+        dealer:
+          type: string
+      required: [message, dealer]
+      example:
+        message: "Data received & forwarded"
+        dealer: "Aktup Test"
+    TelemetryNeedsAssignment:
+      type: object
+      properties:
+        message:
+          type: string
+        device:
+          type: string
+        needsAssignment:
+          type: boolean
+      required: [message, device, needsAssignment]
+      example:
+        message: "Device registered but not assigned to a dealer"
+        device: "2-aktup"
+        needsAssignment: true
+    TelemetryHistory:
+      type: object
+      properties:
+        tankLevel:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+      required: [tankLevel, timestamp]
+    Dealer:
+      type: object
+      properties:
+        id:
+          type: string
+        licenseNo:
+          type: string
+        deviceId:
+          type: string
+          nullable: true
+        title:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+        distributor:
+          type: string
+        taxNo:
+          type: string
+          nullable: true
+        decisionNo:
+          type: string
+          nullable: true
+        documentNo:
+          type: string
+          nullable: true
+        contractStartDate:
+          type: string
+          format: date-time
+          nullable: true
+        contractEndDate:
+          type: string
+          format: date-time
+          nullable: true
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        tankLevel:
+          type: number
+        lastData:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, title]
+      example:
+        id: "84f99a90-7c47-47ad-9740-57235997d536"
+        title: "Aktup Test"
+        deviceId: "2-aktup"
+        tankLevel: 60
+        lastData: "2026-01-30T10:35:51.986Z"
+    DealerCreateRequest:
+      type: object
+      properties:
+        licenseNo:
+          type: string
+        title:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+        distributor:
+          type: string
+        deviceId:
+          type: string
+          nullable: true
+        tankLevel:
+          type: number
+          default: 0
+      required: [title]
+    DealerUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+        distributor:
+          type: string
+        deviceId:
+          type: string
+          nullable: true
+        tankLevel:
+          type: number
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+        deviceId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        lastSeen:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, deviceId, name, status]
+      example:
+        id: "5ce9d7a1-87b1-4c8d-89b2-3d1b6f60a2d2"
+        deviceId: "1-aktup"
+        name: "Arduino 1-aktup"
+        description: "Otomatik kaydedildi"
+        status: "active"
+        lastSeen: "2026-01-30T18:12:10.501Z"
+    DeviceCreateRequest:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+      required: [deviceId, name]
+    DeviceUpdateRequest:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string

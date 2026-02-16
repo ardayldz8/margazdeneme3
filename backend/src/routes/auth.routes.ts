@@ -4,11 +4,9 @@ import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth.middleware';
+import { JWT_SECRET, JWT_EXPIRES_IN } from '../lib/config';
 
 const router = Router();
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
-const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as jwt.SignOptions['expiresIn'];
 
 // Validation schemas
 const loginSchema = z.object({

@@ -42,9 +42,10 @@ describe('Dealer Endpoints', () => {
     });
 
     describe('GET /api/dealers', () => {
-        it('should get all dealers (public)', async () => {
+        it('should get all dealers (authenticated)', async () => {
             const response = await request(app)
                 .get('/api/dealers')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200);
 
             expect(Array.isArray(response.body)).toBe(true);
@@ -55,6 +56,7 @@ describe('Dealer Endpoints', () => {
 
             const response = await request(app)
                 .get('/api/dealers')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200);
 
             expect(response.body).toEqual([]);
@@ -138,6 +140,7 @@ describe('Dealer Endpoints', () => {
         it('should get a specific dealer by ID', async () => {
             const response = await request(app)
                 .get(`/api/dealers/${testDealer.id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200);
 
             expect(response.body).toHaveProperty('id', testDealer.id);
@@ -147,6 +150,7 @@ describe('Dealer Endpoints', () => {
         it('should return 404 for non-existent dealer', async () => {
             const response = await request(app)
                 .get('/api/dealers/non-existent-id')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(404);
 
             expect(response.body).toHaveProperty('error', 'Dealer not found');
@@ -240,6 +244,7 @@ describe('Dealer Endpoints', () => {
             // Verify dealer is deleted
             const getResponse = await request(app)
                 .get(`/api/dealers/${dealerToDelete.id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(404);
 
             expect(getResponse.body).toHaveProperty('error', 'Dealer not found');
@@ -259,6 +264,7 @@ describe('Dealer Endpoints', () => {
         it('should get dealer telemetry history', async () => {
             const response = await request(app)
                 .get(`/api/dealers/${testDealer.id}/history`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200);
 
             expect(Array.isArray(response.body)).toBe(true);
@@ -267,6 +273,7 @@ describe('Dealer Endpoints', () => {
         it('should get history for specific hours', async () => {
             const response = await request(app)
                 .get(`/api/dealers/${testDealer.id}/history?hours=48`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200);
 
             expect(Array.isArray(response.body)).toBe(true);

@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get all dealers
-router.get('/', async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
     try {
         const dealers = await prisma.dealer.findMany({
             orderBy: { updatedAt: 'desc' }
@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get single dealer by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticate, async (req, res) => {
     try {
         const { id } = req.params;
         const dealer = await prisma.dealer.findUnique({
@@ -37,7 +37,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Get dealer telemetry history (Son 24 saat veya tarih araligi)
-router.get('/:id/history', async (req, res) => {
+router.get('/:id/history', authenticate, async (req, res) => {
     try {
         const { id } = req.params;
         const start = req.query.start as string | undefined;
@@ -168,7 +168,7 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
             }
         });
         res.json(dealer);
-    } catch (error) {
+    } catch (error: any) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
             res.status(404).json({ error: 'Dealer not found' });
             return;
@@ -186,7 +186,7 @@ router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
             where: { id }
         });
         res.json({ message: 'Dealer deleted successfully' });
-    } catch (error) {
+    } catch (error: any) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
             res.status(404).json({ error: 'Dealer not found' });
             return;

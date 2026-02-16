@@ -1,9 +1,8 @@
 import puppeteer from 'puppeteer';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import axios from 'axios';
 import fs from 'fs';
 
-const prisma = new PrismaClient();
 
 export class EpdkService {
     async syncDealers() {

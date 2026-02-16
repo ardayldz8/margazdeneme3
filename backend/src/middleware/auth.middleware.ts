@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../lib/config';
 
 // Extend Express Request type
 declare global {
@@ -13,8 +14,6 @@ declare global {
         }
     }
 }
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
 
 /**
  * Verifies JWT token and attaches user to request
