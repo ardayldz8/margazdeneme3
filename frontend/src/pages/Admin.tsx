@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Cpu, Server } from 'lucide-react';
 import { useAuthFetch } from '../contexts/AuthContext';
 import { API_URL } from '../config';
@@ -24,6 +24,11 @@ interface Device {
     description: string | null;
     status: string;
     lastSeen: string | null;
+    rssi: number | null;
+    errStreak: number | null;
+    uptimeMin: number | null;
+    freeRam: number | null;
+    lastErrReason: string | null;
 }
 
 export function Admin() {
@@ -46,6 +51,14 @@ export function Admin() {
         fetchDealers();
         fetchDevices();
     }, []);
+
+    const devicesByDeviceId = useMemo(() => {
+        const map = new Map<string, Device>();
+        for (const device of devices) {
+            map.set(device.deviceId, device);
+        }
+        return map;
+    }, [devices]);
 
     const fetchDealers = async () => {
         try {
@@ -156,6 +169,76 @@ export function Admin() {
             address: dealer.address || '', distributor: dealer.distributor || '',
             deviceId: dealer.deviceId || '', status: dealer.status || 'Yürürlükte'
         });
+    };
+
+    const getRssiView = (rssi: number | null) => {
+        if (rssi === null || rssi === undefined) {
+            return {
+                label: '-',
+                className: 'bg-gray-100 text-gray-600'
+            };
+        }
+        if (rssi >= -85) {
+            return {
+                label: `${rssi} dBm`,
+                className: 'bg-green-100 text-green-700'
+            };
+        }
+        if (rssi >= -100) {
+            return {
+                label: `${rssi} dBm`,
+                className: 'bg-amber-100 text-amber-700'
+            };
+        }
+        return {
+            label: `${rssi} dBm`,
+            className: 'bg-red-100 text-red-700'
+        };
+    };
+
+    const getDiagnosticStatus = (dealer: Dealer, device?: Device) => {
+        if (!dealer.deviceId) {
+            return {
+                label: 'Bagli degil',
+                className: 'bg-gray-100 text-gray-600'
+            };
+        }
+        if (!device) {
+            return {
+                label: 'Cihaz kaydi yok',
+                className: 'bg-gray-100 text-gray-600'
+            };
+        }
+        if (!device.lastSeen) {
+            return {
+                label: 'Veri bekleniyor',
+                className: 'bg-gray-100 text-gray-600'
+            };
+        }
+
+        const minutesSinceSeen = (Date.now() - new Date(device.lastSeen).getTime()) / (1000 * 60);
+        if (Number.isFinite(minutesSinceSeen) && minutesSinceSeen > 60) {
+            return {
+                label: 'Offline',
+                className: 'bg-red-100 text-red-700'
+            };
+        }
+        if (device.lastErrReason && device.lastErrReason !== 'ok') {
+            return {
+                label: `Hata: ${device.lastErrReason}`,
+                className: 'bg-amber-100 text-amber-700'
+            };
+        }
+        if (device.rssi !== null && device.rssi < -100) {
+            return {
+                label: 'Zayif sinyal',
+                className: 'bg-amber-100 text-amber-700'
+            };
+        }
+        return {
+            label: 'Saglikli',
+            className: 'bg-green-100 text-green-700'
+        };
     };
 
     return (
@@ -309,11 +392,18 @@ export function Admin() {
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Konum</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cihaz</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tank</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">RSSI</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">İşlem</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
-                                    {dealers.map(dealer => (
+                                    {dealers.map(dealer => {
+                                        const linkedDevice = dealer.deviceId ? devicesByDeviceId.get(dealer.deviceId) : undefined;
+                                        const rssiView = getRssiView(linkedDevice?.rssi ?? null);
+                                        const diagStatus = getDiagnosticStatus(dealer, linkedDevice);
+
+                                        return (
                                         <tr key={dealer.id}>
                                             {editingId === dealer.id ? (
                                                 <>
@@ -335,6 +425,8 @@ export function Admin() {
                                                         </select>
                                                     </td>
                                                     <td className="px-4 py-3">%{dealer.tankLevel}</td>
+                                                    <td className="px-4 py-3 text-sm text-gray-500">-</td>
+                                                    <td className="px-4 py-3 text-sm text-gray-500">-</td>
                                                     <td className="px-4 py-3 flex gap-2">
                                                         <button onClick={() => handleUpdateDealer(dealer.id)} className="text-green-600"><Save className="h-5 w-5" /></button>
                                                         <button onClick={() => setEditingId(null)} className="text-gray-600"><X className="h-5 w-5" /></button>
@@ -359,6 +451,16 @@ export function Admin() {
                                                             %{dealer.tankLevel}
                                                         </span>
                                                     </td>
+                                                    <td className="px-4 py-3">
+                                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${rssiView.className}`}>
+                                                            {rssiView.label}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${diagStatus.className}`}>
+                                                            {diagStatus.label}
+                                                        </span>
+                                                    </td>
                                                     <td className="px-4 py-3 flex gap-2">
                                                         <button onClick={() => startEdit(dealer)} className="text-blue-600"><Edit2 className="h-5 w-5" /></button>
                                                         <button onClick={() => handleDeleteDealer(dealer.id)} className="text-red-600"><Trash2 className="h-5 w-5" /></button>
@@ -366,7 +468,8 @@ export function Admin() {
                                                 </>
                                             )}
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         )}

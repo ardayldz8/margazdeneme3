@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { ArrowLeft, Fuel, MapPin, Calendar, FileText, Building2, TrendingUp, Clock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Fuel, MapPin, Calendar, FileText, Building2, TrendingUp, Clock, AlertCircle, Cpu } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -21,6 +21,18 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+interface DeviceDiagnostics {
+    deviceId: string;
+    name: string;
+    status: string;
+    lastSeen: string | null;
+    rssi: number | null;
+    errStreak: number | null;
+    uptimeMin: number | null;
+    freeRam: number | null;
+    lastErrReason: string | null;
+}
+
 interface Dealer {
     id: string;
     licenseNo: string;
@@ -39,8 +51,10 @@ interface Dealer {
     contractEndDate: string | null;
     latitude: number | null;
     longitude: number | null;
+    deviceId: string | null;
     tankLevel: number;
     lastData: string | null;
+    deviceDiagnostics: DeviceDiagnostics | null;
 }
 
 export function DealerDetail() {
@@ -134,6 +148,52 @@ export function DealerDetail() {
     const formatDate = (dateString: string | null) => {
         if (!dateString) return '-';
         return new Date(dateString).toLocaleDateString('tr-TR');
+    };
+
+    const formatDateTime = (dateString: string | null) => {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return '-';
+        return date.toLocaleString('tr-TR');
+    };
+
+    const formatUptime = (uptimeMin: number | null) => {
+        if (uptimeMin === null || uptimeMin === undefined) return '-';
+        if (uptimeMin < 60) return `${uptimeMin} dk`;
+        const days = Math.floor(uptimeMin / 1440);
+        const hours = Math.floor((uptimeMin % 1440) / 60);
+        const mins = uptimeMin % 60;
+        if (days > 0) return `${days}g ${hours}s ${mins}dk`;
+        return `${hours}s ${mins}dk`;
+    };
+
+    const getSignalQuality = (rssi: number | null) => {
+        if (rssi === null || rssi === undefined) {
+            return {
+                label: 'Veri yok',
+                colorClass: 'bg-gray-100 text-gray-700',
+                dotClass: 'bg-gray-400'
+            };
+        }
+        if (rssi >= -85) {
+            return {
+                label: 'Iyi',
+                colorClass: 'bg-green-100 text-green-700',
+                dotClass: 'bg-green-500'
+            };
+        }
+        if (rssi >= -100) {
+            return {
+                label: 'Orta',
+                colorClass: 'bg-amber-100 text-amber-700',
+                dotClass: 'bg-amber-500'
+            };
+        }
+        return {
+            label: 'Zayif',
+            colorClass: 'bg-red-100 text-red-700',
+            dotClass: 'bg-red-500'
+        };
     };
 
     if (loading) {
@@ -331,6 +391,76 @@ export function DealerDetail() {
 
                 {/* Right Column: Details */}
                 <div className="space-y-6">
+                    {/* Device Diagnostics Card */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">
+                            <Cpu className="h-5 w-5 text-primary-600" />
+                            <h2 className="font-semibold text-gray-900">Cihaz Sagligi</h2>
+                        </div>
+                        {!dealer.deviceId ? (
+                            <p className="text-sm text-gray-500">Bu bayiye bagli cihaz yok.</p>
+                        ) : !dealer.deviceDiagnostics ? (
+                            <div className="space-y-2 text-sm">
+                                <p className="text-gray-700 font-medium">Cihaz ID: <span className="font-mono">{dealer.deviceId}</span></p>
+                                <p className="text-gray-500">Diagnostik veri henuz gelmedi.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4 text-sm">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-gray-500 text-xs mb-1">Cihaz</p>
+                                        <p className="font-medium text-gray-900">{dealer.deviceDiagnostics.name}</p>
+                                        <p className="text-xs text-gray-500 font-mono">{dealer.deviceDiagnostics.deviceId}</p>
+                                    </div>
+                                    {(() => {
+                                        const signal = getSignalQuality(dealer.deviceDiagnostics.rssi);
+                                        return (
+                                            <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium ${signal.colorClass}`}>
+                                                <span className={`h-2 w-2 rounded-full ${signal.dotClass}`} />
+                                                Sinyal {signal.label}
+                                            </span>
+                                        );
+                                    })()}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="rounded-lg bg-gray-50 px-3 py-2">
+                                        <p className="text-xs text-gray-500">RSSI</p>
+                                        <p className="font-semibold text-gray-900">
+                                            {dealer.deviceDiagnostics.rssi ?? '-'} {dealer.deviceDiagnostics.rssi !== null ? 'dBm' : ''}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg bg-gray-50 px-3 py-2">
+                                        <p className="text-xs text-gray-500">Cihaz Durumu</p>
+                                        <p className="font-semibold text-gray-900">{dealer.deviceDiagnostics.status || '-'}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-gray-50 px-3 py-2">
+                                        <p className="text-xs text-gray-500">Uptime</p>
+                                        <p className="font-semibold text-gray-900">{formatUptime(dealer.deviceDiagnostics.uptimeMin)}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-gray-50 px-3 py-2">
+                                        <p className="text-xs text-gray-500">Hata Sayaci</p>
+                                        <p className="font-semibold text-gray-900">{dealer.deviceDiagnostics.errStreak ?? '-'}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-gray-50 px-3 py-2 col-span-2">
+                                        <p className="text-xs text-gray-500">Son Hata Nedeni</p>
+                                        <p className="font-semibold text-gray-900">{dealer.deviceDiagnostics.lastErrReason || '-'}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-gray-50 px-3 py-2">
+                                        <p className="text-xs text-gray-500">Free RAM</p>
+                                        <p className="font-semibold text-gray-900">
+                                            {dealer.deviceDiagnostics.freeRam ?? '-'} {dealer.deviceDiagnostics.freeRam !== null ? 'byte' : ''}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg bg-gray-50 px-3 py-2">
+                                        <p className="text-xs text-gray-500">Son Gorulme</p>
+                                        <p className="font-semibold text-gray-900">{formatDateTime(dealer.deviceDiagnostics.lastSeen)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Info Card */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">

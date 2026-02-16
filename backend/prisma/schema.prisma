@@ -58,6 +58,14 @@ model Device {
   status      String   @default("active")  // active, inactive, maintenance
   lastSeen    DateTime?          // Son veri gönderimi
   auth        DeviceAuth?
+
+  // Diagnostics (firmware'dan gelen son veriler)
+  rssi          Int?       // Sinyal gücü (dBm, -113 ile -51 arası)
+  errStreak     Int?       // Son başarıdan beri hata sayısı
+  uptimeMin     Int?       // Cihaz uptime (dakika)
+  freeRam       Int?       // Kalan RAM (byte)
+  lastErrReason String?    // Son hata nedeni: ok, gprs, time, http, sig
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

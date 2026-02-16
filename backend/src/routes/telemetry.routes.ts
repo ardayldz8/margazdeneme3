@@ -247,10 +247,19 @@ router.post('/', async (req, res) => {
             userAgent: req.get('user-agent')
         });
 
-        // Cihazın lastSeen'ini güncelle
+        // Cihazın lastSeen ve diagnostik alanlarını güncelle
+        const diag = req.body.diag;
+        const deviceUpdateData: any = { lastSeen: new Date() };
+        if (diag && typeof diag === 'object') {
+            if (typeof diag.rssi === 'number') deviceUpdateData.rssi = diag.rssi;
+            if (typeof diag.err === 'number') deviceUpdateData.errStreak = diag.err;
+            if (typeof diag.up === 'number') deviceUpdateData.uptimeMin = diag.up;
+            if (typeof diag.ram === 'number') deviceUpdateData.freeRam = diag.ram;
+            if (typeof diag.reason === 'string') deviceUpdateData.lastErrReason = diag.reason;
+        }
         await prisma.device.update({
             where: { id: device.id },
-            data: { lastSeen: new Date() }
+            data: deviceUpdateData
         });
 
         // Device ID'ye göre bayi bul
@@ -298,7 +307,8 @@ router.post('/', async (req, res) => {
             tank_level: updatedDealer.tankLevel,
             device_id: normalizedDeviceId,
             auth_mode: authMode,
-            verify_result: verifyResult
+            verify_result: verifyResult,
+            diag: diag || null
         });
 
         // --- FORWARD TO AWS (Cloud Bridge) ---

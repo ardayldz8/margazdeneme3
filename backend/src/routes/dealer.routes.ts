@@ -30,7 +30,39 @@ router.get('/:id', authenticate, async (req, res) => {
             return;
         }
 
-        res.json(dealer);
+        const device = dealer.deviceId
+            ? await prisma.device.findUnique({
+                where: { deviceId: dealer.deviceId },
+                select: {
+                    deviceId: true,
+                    name: true,
+                    status: true,
+                    lastSeen: true,
+                    rssi: true,
+                    errStreak: true,
+                    uptimeMin: true,
+                    freeRam: true,
+                    lastErrReason: true
+                }
+            })
+            : null;
+
+        res.json({
+            ...dealer,
+            deviceDiagnostics: device
+                ? {
+                    deviceId: device.deviceId,
+                    name: device.name,
+                    status: device.status,
+                    lastSeen: device.lastSeen,
+                    rssi: device.rssi,
+                    errStreak: device.errStreak,
+                    uptimeMin: device.uptimeMin,
+                    freeRam: device.freeRam,
+                    lastErrReason: device.lastErrReason
+                }
+                : null
+        });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch dealer' });
     }
