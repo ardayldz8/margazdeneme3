@@ -97,11 +97,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const register = async (email: string, password: string, name?: string): Promise<{ success: boolean; error?: string }> => {
         try {
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json'
+            };
+            // Send current token so ADMIN can register new users (P0 #3 requires ADMIN role)
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${API_URL}/api/auth/register`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers,
                 body: JSON.stringify({ email, password, name })
             });
 
@@ -157,7 +163,7 @@ export function useAuth() {
 
 // Helper hook for making authenticated API requests
 export function useAuthFetch() {
-    const { token } = useAuth();
+    const { token, logout } = useAuth();
 
     const authFetch = async (url: string, options: RequestInit = {}) => {
         const headers = {
@@ -166,10 +172,25 @@ export function useAuthFetch() {
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         };
 
-        return fetch(url, {
+        const response = await fetch(url, {
             ...options,
             headers
         });
+
+        // 401 interceptor: token expired or invalid → auto-logout
+        if (response.status === 401) {
+            console.warn('Auth token expired or invalid, logging out...');
+            logout();
+            window.location.href = '/login';
+            return response;
+        }
+
+        // 429 rate limit warning
+        if (response.status === 429) {
+            console.warn('Rate limit exceeded:', url);
+        }
+
+        return response;
     };
 
     return authFetch;

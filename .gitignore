@@ -7,6 +7,11 @@ coverage/
 .vscode/
 *.log
 
+# SQLite databases (prevent git conflicts with production DB)
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/test.db
+
 # Documentation files
 *.md
 MARGAZ_AI_NOTES.md
