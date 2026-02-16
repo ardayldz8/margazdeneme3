@@ -58,7 +58,13 @@ router.get('/:id/history', async (req, res) => {
             }
 
             const history = await prisma.telemetryHistory.findMany({
-                where: { dealerId: id },
+                where: {
+                    dealerId: id,
+                    timestamp: {
+                        gte: startDate,
+                        lte: endDate
+                    }
+                },
                 orderBy: { timestamp: 'asc' },
                 select: {
                     tankLevel: true,
@@ -66,15 +72,7 @@ router.get('/:id/history', async (req, res) => {
                 }
             });
 
-            const startMs = startDate.getTime();
-            const endMs = endDate.getTime();
-
-            const filtered = history.filter((item: { timestamp: Date }) => {
-                const ts = new Date(item.timestamp).getTime();
-                return ts >= startMs && ts <= endMs;
-            });
-
-            res.json(filtered);
+            res.json(history);
             return;
         }
 

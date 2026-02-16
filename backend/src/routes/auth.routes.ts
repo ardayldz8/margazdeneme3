@@ -1,12 +1,11 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '7d') as jwt.SignOptions['expiresIn'];
@@ -32,9 +31,9 @@ router.post('/login', async (req, res) => {
         // Validate input
         const result = loginSchema.safeParse(req.body);
         if (!result.success) {
-            res.status(400).json({ 
-                error: 'Validation failed', 
-                details: result.error.issues 
+            res.status(400).json({
+                error: 'Validation failed',
+                details: result.error.issues
             });
             return;
         }
@@ -83,16 +82,43 @@ router.post('/login', async (req, res) => {
 
 /**
  * POST /api/auth/register
- * Register a new user (Admin only in production)
+ * Register a new user
+ * - If no users exist: open (bootstrap - first user becomes ADMIN)
+ * - Otherwise: requires ADMIN authentication
  */
 router.post('/register', async (req, res) => {
     try {
+        // Check if this is the first user (bootstrap mode)
+        const userCount = await prisma.user.count();
+        const isBootstrap = userCount === 0;
+
+        // If not bootstrap, require ADMIN authentication
+        if (!isBootstrap) {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                res.status(401).json({ error: 'Admin authentication required' });
+                return;
+            }
+
+            const token = authHeader.split(' ')[1];
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
+                if (decoded.role !== 'ADMIN') {
+                    res.status(403).json({ error: 'Only admins can create new users' });
+                    return;
+                }
+            } catch {
+                res.status(401).json({ error: 'Invalid or expired token' });
+                return;
+            }
+        }
+
         // Validate input
         const result = registerSchema.safeParse(req.body);
         if (!result.success) {
-            res.status(400).json({ 
-                error: 'Validation failed', 
-                details: result.error.issues 
+            res.status(400).json({
+                error: 'Validation failed',
+                details: result.error.issues
             });
             return;
         }
@@ -112,9 +138,8 @@ router.post('/register', async (req, res) => {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        // Check if this is the first user (make them admin)
-        const userCount = await prisma.user.count();
-        const role = userCount === 0 ? 'ADMIN' : 'VIEWER';
+        // First user is always ADMIN, others get role from request body or default VIEWER
+        const role = isBootstrap ? 'ADMIN' : (req.body.role === 'ADMIN' ? 'ADMIN' : 'VIEWER');
 
         // Create user
         const user = await prisma.user.create({
@@ -126,23 +151,26 @@ router.post('/register', async (req, res) => {
             }
         });
 
-        // Generate JWT
-        const token = jwt.sign(
-            { id: user.id, email: user.email, role: user.role },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
-        );
-
-        res.status(201).json({
-            message: 'Kayıt başarılı',
-            token,
+        // Generate JWT (only for bootstrap — admin already has a token)
+        const responseData: any = {
+            message: isBootstrap ? 'İlk admin hesabı oluşturuldu' : 'Kullanıcı oluşturuldu',
             user: {
                 id: user.id,
                 email: user.email,
                 name: user.name,
                 role: user.role
             }
-        });
+        };
+
+        if (isBootstrap) {
+            responseData.token = jwt.sign(
+                { id: user.id, email: user.email, role: user.role },
+                JWT_SECRET,
+                { expiresIn: JWT_EXPIRES_IN }
+            );
+        }
+
+        res.status(201).json(responseData);
     } catch (error) {
         console.error('Register error:', error);
         res.status(500).json({ error: 'Kayıt sırasında bir hata oluştu' });
