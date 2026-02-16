@@ -49,9 +49,11 @@ export function Admin() {
 
     const fetchDealers = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/dealers`);
-            const data = await response.json();
-            setDealers(data);
+            const response = await authFetch(`${API_URL}/api/dealers`);
+            if (response.ok) {
+                const data = await response.json();
+                setDealers(data);
+            }
         } catch (error) {
             console.error('Error fetching dealers:', error);
         }

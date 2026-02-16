@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Building2, MapPin } from 'lucide-react';
 import { API_URL } from '../config';
+import { useAuthFetch } from '../contexts/AuthContext';
 
 interface Dealer {
     id: string;
@@ -24,6 +25,7 @@ interface Dealer {
 
 export function Dealers() {
     const navigate = useNavigate();
+    const authFetch = useAuthFetch();
     const [dealers, setDealers] = useState<Dealer[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -37,7 +39,7 @@ export function Dealers() {
 
     const fetchDealers = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/dealers`);
+            const response = await authFetch(`${API_URL}/api/dealers`);
             const data = await response.json();
             setDealers(data);
         } catch (error) {

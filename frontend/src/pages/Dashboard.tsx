@@ -14,10 +14,12 @@ interface Dealer {
 
 import { API_URL } from '../config';
 import { loadUiSettings } from '../lib/uiSettings';
+import { useAuthFetch } from '../contexts/AuthContext';
 
 export function Dashboard() {
     const uiSettings = loadUiSettings();
     const { criticalLevel, warningLevel } = uiSettings.thresholds;
+    const authFetch = useAuthFetch();
 
     const [dealers, setDealers] = useState<Dealer[]>([]);
     const [loading, setLoading] = useState(true);
@@ -34,7 +36,7 @@ export function Dashboard() {
 
     const fetchDealers = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/dealers`);
+            const response = await authFetch(`${API_URL}/api/dealers`);
 
             if (!response.ok) {
                 if (response.status === 429) {

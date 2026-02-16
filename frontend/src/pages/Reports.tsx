@@ -3,6 +3,7 @@ import { AlertTriangle, Download, FileText, Fuel, Search, ShieldAlert } from 'lu
 
 import { API_URL } from '../config';
 import { loadUiSettings } from '../lib/uiSettings';
+import { useAuthFetch } from '../contexts/AuthContext';
 
 interface Dealer {
     id: string;
@@ -62,6 +63,7 @@ function bucketLabel(bucket: 'critical' | 'warning' | 'normal' | 'nodata'): stri
 export function Reports() {
     const uiSettings = loadUiSettings();
     const { criticalLevel, warningLevel, staleHours } = uiSettings.thresholds;
+    const authFetch = useAuthFetch();
 
     const [dealers, setDealers] = useState<Dealer[]>([]);
     const [loading, setLoading] = useState(true);
@@ -72,7 +74,7 @@ export function Reports() {
     useEffect(() => {
         const fetchDealers = async () => {
             try {
-                const response = await fetch(`${API_URL}/api/dealers`);
+                const response = await authFetch(`${API_URL}/api/dealers`);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
                 setDealers(data);
@@ -342,7 +344,7 @@ export function Reports() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
-            {filtered.map((d) => {
+                                {filtered.map((d) => {
                                     const l = daysUntil(d.endDate);
                                     const c = daysUntil(d.contractEndDate);
                                     const expiryText =

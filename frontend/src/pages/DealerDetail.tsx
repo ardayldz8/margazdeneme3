@@ -7,6 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import { API_URL } from '../config';
+import { useAuthFetch } from '../contexts/AuthContext';
 
 // Fix for default marker icon
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -45,6 +46,7 @@ interface Dealer {
 export function DealerDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const authFetch = useAuthFetch();
     const [dealer, setDealer] = useState<Dealer | null>(null);
     const [loading, setLoading] = useState(true);
     const [historyData, setHistoryData] = useState<any[]>([]);
@@ -55,7 +57,7 @@ export function DealerDetail() {
     useEffect(() => {
         const fetchDealer = async () => {
             try {
-                const response = await fetch(`${API_URL}/api/dealers/${id}`);
+                const response = await authFetch(`${API_URL}/api/dealers/${id}`);
                 if (response.ok) {
                     const data = await response.json();
                     setDealer(data);
@@ -96,7 +98,7 @@ export function DealerDetail() {
             } else {
                 params.set('hours', '24');
             }
-            const response = await fetch(`${API_URL}/api/dealers/${id}/history?${params.toString()}`);
+            const response = await authFetch(`${API_URL}/api/dealers/${id}/history?${params.toString()}`);
             if (response.ok) {
                 const data = await response.json();
                 // Format data for chart

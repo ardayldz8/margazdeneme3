@@ -5,6 +5,7 @@ import { Building2, RefreshCw } from 'lucide-react';
 import L from 'leaflet';
 
 import { API_URL } from '../config';
+import { useAuthFetch } from '../contexts/AuthContext';
 
 // Fix for default marker icon missing in React Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -33,6 +34,7 @@ interface Dealer {
 }
 
 export function Map() {
+    const authFetch = useAuthFetch();
     const [dealers, setDealers] = useState<Dealer[]>([]);
     const [loading, setLoading] = useState(true);
     const [geocoding, setGeocoding] = useState(false);
@@ -43,7 +45,7 @@ export function Map() {
 
     const fetchDealers = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/dealers`);
+            const response = await authFetch(`${API_URL}/api/dealers`);
             const data: Dealer[] = await response.json();
 
             // Apply deterministic jitter to separate overlapping markers
@@ -76,7 +78,7 @@ export function Map() {
     const triggerGeocoding = async () => {
         setGeocoding(true);
         try {
-            await fetch(`${API_URL}/api/dealers/geocode`, { method: 'POST' });
+            await authFetch(`${API_URL}/api/dealers/geocode`, { method: 'POST' });
             alert('Konum güncelleme işlemi arka planda başlatıldı. Sayfayı birkaç dakika sonra yenileyin.');
         } catch (error) {
             console.error('Error triggering geocode:', error);
